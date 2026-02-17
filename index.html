@@ -233,56 +233,69 @@ if (newtonX < margin - 40) newtonX = margin - 40;
         // --- MAIN LOOP ---
         function gameLoop() {
     if (gameOver) {
-        drawBackground();
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; 
-        ctx.fillRect(margin, margin, canvas.width - (margin*2), canvas.height - (margin*2));
+        // Draw background but darkened
+        ctx.drawImage(backgroundImg, margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
         
-        ctx.fillStyle = "white"; 
-        ctx.textAlign = "center";
-        ctx.font = "bold 40px Arial"; 
-        ctx.fillText("GAME OVER", canvas.width / 2, 300);
+        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
         
+        // Always draw border last so it's on top
         ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
         return;
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw game world inside the margin
-    drawBackground(); 
+
+    // --- START CLIPPING ---
+    // This creates a "mask" so nothing can bulge out of the vines
+    ctx.save(); 
+    ctx.beginPath();
+    ctx.rect(margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
+    ctx.clip(); 
+
+    // Everything drawn between ctx.save() and ctx.restore() 
+    // is now forced to stay INSIDE the vine window.
+    drawBackground();
     particles.forEach((p, i) => {
         p.update(); p.draw();
         if (p.alpha <= 0) particles.splice(i, 1);
     });
     drawNewton();
     drawApple();
-    spawnBomb();
+    
+    if (Math.random() < 0.01) {
+        bombs.push({ 
+            x: margin + Math.random() * (canvas.width - (margin * 2) - 45), 
+            y: margin, size: 45, speed: 4 + Math.random() * 2 
+        });
+    }
     updateBombs();
+
+    ctx.restore(); 
+    // --- END CLIPPING ---
 
     // Movement Controls
     if (keys.left) newtonX -= 8;
     if (keys.right) newtonX += 8;
 
-    // --- UI SCORE ---
-    // Moved to (95, 120) so it's not covered by the top-left vines
+    // Score (Drawn outside clipping so it doesn't get cut off)
     ctx.fillStyle = "#FFD700"; 
     ctx.textAlign = "left";
-    ctx.font = "bold 26px Arial"; 
-    ctx.fillText("Score: " + score, 95, 120); 
+    ctx.font = "bold 24px Arial"; 
+    ctx.fillText("Score: " + score, 95, 125);
 
-    // Collision Logic
+    // Physics/Collision
     appleY += speed;
-    // Adjusted hit detection to match the new Newton position
     if (appleY > 380 && appleY < 480 && appleX > newtonX && appleX < newtonX + 170) {
         score += isGolden ? 5 : 1;
         if (score % 10 === 0) speed += 0.5;
         resetApple();
     }
-    if (appleY > canvas.height - margin) { gameOver = true; }
+    if (appleY > canvas.height - margin) gameOver = true;
 
-    // --- FINAL BORDER LAYER ---
-    // Since we fixed the internal margins, we can draw the border 
-    // exactly at 0,0 to the canvas width/height.
+    // The Border (Top Layer)
     ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
 
     requestAnimationFrame(gameLoop);
