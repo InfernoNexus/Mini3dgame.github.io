@@ -6,20 +6,24 @@
     
     <style>
         body { 
-            margin: 0; padding: 0; overflow: hidden; 
+            margin: 0; padding: 0; 
             text-align: center; font-family: 'Arial Black', sans-serif; 
-            background: #b0e2ff; display: flex; flex-direction: column; height: 100vh;
+            background: #b0e2ff; display: flex; flex-direction: column; min-height: 100vh;
+            /* Removed overflow:hidden so you can swipe to refresh */
         }
         
         canvas { 
             display: block; margin: 0 auto; width: 100%; max-width: 520px;
-            height: 82vh; background: transparent; touch-action: none;
+            height: 75vh; background: transparent; 
+            /* Removed touch-action:none so the browser works normally */
         }
 
-        /* Button Lane moved upward with padding-bottom */
+        /* Button Lane moved even further UP */
         #mobile-ui {
             flex-grow: 1; display: flex; align-items: center; justify-content: center;
-            gap: 15px; padding: 10px; padding-bottom: 40px; /* Moves lane up from bottom edge */
+            gap: 20px; 
+            padding-top: 10px;
+            padding-bottom: 80px; /* Increased padding to move buttons up */
             background: #b0e2ff;
         }
 
@@ -73,29 +77,18 @@
             ctx.drawImage(backgroundImg, bgX - 60, 0, canvas.width + 120, canvas.height);
         }
 
-        // Wooden Scoreboard Function
         function drawScoreboard() {
             const bx = canvas.width / 2 - 80;
             const by = 85;
             const bw = 160;
             const bh = 50;
 
-            // Wood Plank
-            ctx.fillStyle = "#5d4037"; // Dark wood
+            ctx.fillStyle = "#5d4037"; 
             ctx.fillRect(bx, by, bw, bh);
             ctx.strokeStyle = "#3e2723";
             ctx.lineWidth = 4;
             ctx.strokeRect(bx, by, bw, bh);
 
-            // Wood Grain Lines
-            ctx.strokeStyle = "rgba(0,0,0,0.2)";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(bx + 10, by + 15); ctx.lineTo(bx + bw - 10, by + 15);
-            ctx.moveTo(bx + 20, by + 35); ctx.lineTo(bx + bw - 20, by + 35);
-            ctx.stroke();
-
-            // Text
             ctx.fillStyle = "#FFD700";
             ctx.textAlign = "center";
             ctx.font = "bold 26px Arial";
@@ -106,8 +99,7 @@
             if (newtonX < 40) newtonX = 40;
             if (newtonX > canvas.width - 200) newtonX = canvas.width - 200;
 
-            // LIFTED NEWTON: Moved Y up to 580 (was 620) to clear the border
-            const charY = 580; 
+            const charY = 560; // Lifted even higher
             
             ctx.fillStyle = "rgba(0,0,0,0.2)";
             ctx.beginPath(); ctx.ellipse(newtonX + 85, charY + 185, 55, 10, 0, 0, Math.PI * 2); ctx.fill();
@@ -138,11 +130,10 @@
             bombs = []; resetApple(); gameLoop();
         }
 
-        // Input Listeners
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
-        document.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") keys.left = true; if (e.key === "ArrowRight") keys.right = true; });
-        document.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") keys.left = false; if (e.key === "ArrowRight") keys.right = false; });
+
+        // Touch Listeners (Keeping e.preventDefault() only on buttons to prevent zoom)
         leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
         leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
         rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
@@ -163,13 +154,15 @@
             drawApple();
             drawNewton();
 
-            // Bombs Logic
-            if (Math.random() < 0.01) bombs.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50, speed: 4 + Math.random() * 2 });
+            // BOMBS APPEAR LESS: Reduced spawn chance to 0.005 (was 0.01)
+            if (Math.random() < 0.005) {
+                bombs.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50, speed: 4 + Math.random() * 2 });
+            }
+            
             for (let i = bombs.length - 1; i >= 0; i--) {
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, 45, 45);
-                // Hitbox adjusted for Newton's new Y height
-                if (b.x < newtonX + 130 && b.x + 45 > newtonX + 40 && b.y > 580 && b.y < 730) gameOver = true;
+                if (b.x < newtonX + 130 && b.x + 45 > newtonX + 40 && b.y > 560 && b.y < 710) gameOver = true;
                 if (b.y > canvas.height) bombs.splice(i, 1);
             }
 
@@ -179,8 +172,7 @@
             drawScoreboard();
 
             appleY += speed;
-            // Catching logic adjusted for new Newton Y (580 to 730 range)
-            if (appleY > 580 && appleY < 730 && appleX > newtonX && appleX < newtonX + 170) {
+            if (appleY > 560 && appleY < 710 && appleX > newtonX && appleX < newtonX + 170) {
                 score += isGolden ? 5 : 1;
                 if (score % 10 === 0) speed += 0.5;
                 resetApple();
