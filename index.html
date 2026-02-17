@@ -11,12 +11,14 @@
         canvas { 
     display: block; 
     margin: auto; 
-    border: none; /* Already removed, good! */
-    border-radius: 0; /* Keeps it sharp for the frame */
-    width: 95%; 
+    border: none; 
+    border-radius: 0; /* Remove rounded corners to let the border hit the edge */
+    width: 100%;      /* Let it fill the container */
     max-width: 520px; 
-    background: transparent; /* Add this */
+    background: transparent;
+    box-shadow: none; /* Remove shadow if it creates a fake "gap" look */
 }
+
 
 
 
@@ -67,7 +69,7 @@
 <body>
     <h2>🍎 Newton & Gravity 🍎</h2>
     
-    <canvas id="game" width="620" height="620"></canvas>
+    <canvas id="game" width="600" height="600"></canvas>
 
     <div id="mobile-ui">
         <div id="controls">
@@ -263,7 +265,10 @@
 
     // --- THE STRETCH COMMAND ---
     // This stretches the border to exactly 520x620 (or 620x620)
-    ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+    // Drawing from -5 to -5 and adding 10px to width/height 
+// ensures the border "bleeds" over the very edge of the canvas.
+ctx.drawImage(borderImg, -2, -2, canvas.width + 4, canvas.height + 4);
+
 
     requestAnimationFrame(gameLoop);
 }
