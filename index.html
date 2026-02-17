@@ -5,58 +5,36 @@
     <title>Newton & Gravity</title>
     
     <style>
-        /* General Layout - Maximize Screen Space */
         body { 
-            margin: 0; 
-            padding: 0;
-            overflow: hidden; 
-            text-align: center; 
-            font-family: Arial; 
-            background: #b0e2ff; 
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            margin: 0; padding: 0; overflow: hidden; 
+            text-align: center; font-family: 'Arial Black', sans-serif; 
+            background: #b0e2ff; display: flex; flex-direction: column; height: 100vh;
         }
         
         canvas { 
-            display: block; 
-            margin: 0 auto;
-            width: 100%;
-            max-width: 520px;
-            /* Occupies most of the screen since the title is gone */
-            height: 80vh; 
-            background: transparent;
-            touch-action: none;
+            display: block; margin: 0 auto; width: 100%; max-width: 520px;
+            height: 82vh; background: transparent; touch-action: none;
         }
 
-        /* Unified Button Lane at the Bottom */
+        /* Button Lane moved upward with padding-bottom */
         #mobile-ui {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 10px;
+            flex-grow: 1; display: flex; align-items: center; justify-content: center;
+            gap: 15px; padding: 10px; padding-bottom: 40px; /* Moves lane up from bottom edge */
             background: #b0e2ff;
         }
 
         #leftBtn, #rightBtn {
-            width: 70px; height: 70px; border-radius: 50%;
-            border: 3px solid #ffe066; color: white;
-            font-size: 30px; font-weight: bold; cursor: pointer;
+            width: 75px; height: 75px; border-radius: 50%;
+            border: 3px solid #ffe066; color: white; font-size: 30px;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
-            box-shadow: 0 4px 0 #550000;
-            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 0 #550000; display: flex; align-items: center; justify-content: center;
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
         .restart-btn {
-            font-size: 18px; font-weight: bold;
-            padding: 15px 25px; border-radius: 12px; border: 3px solid #ffe066;
-            background: linear-gradient(#ff4d4d, #990000); color: white;
-            box-shadow: 0 4px #550000;
-            cursor: pointer;
-            white-space: nowrap;
+            font-size: 18px; padding: 15px 25px; border-radius: 12px;
+            border: 3px solid #ffe066; background: linear-gradient(#ff4d4d, #990000);
+            color: white; box-shadow: 0 4px #550000; cursor: pointer;
         }
 
         #leftBtn:active, #rightBtn:active, .restart-btn:active {
@@ -84,51 +62,69 @@
         const bombImg = new Image(); bombImg.src = 'bomb.png';
 
         let newtonX = 215;
-        let appleX = 300;
-        let appleY = 0;
-        let score = 0;
-        let speed = 5;
-        let gameOver = false;
-        let isGolden = false;
-        let particles = [];
-        let bombs = [];
+        let appleX = 300; let appleY = 0;
+        let score = 0; let speed = 5;
+        let gameOver = false; let isGolden = false;
+        let bombs = []; let bgX = 0;
         const keys = { left: false, right: false };
 
-        // Parallax variable
-        let bgX = 0;
-
         function drawBackground() {
-            // Parallax shift based on Newton's position
-            bgX = (canvas.width / 2 - newtonX) * 0.2;
+            bgX = (canvas.width / 2 - newtonX) * 0.15;
             ctx.drawImage(backgroundImg, bgX - 60, 0, canvas.width + 120, canvas.height);
         }
 
+        // Wooden Scoreboard Function
+        function drawScoreboard() {
+            const bx = canvas.width / 2 - 80;
+            const by = 85;
+            const bw = 160;
+            const bh = 50;
+
+            // Wood Plank
+            ctx.fillStyle = "#5d4037"; // Dark wood
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = "#3e2723";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(bx, by, bw, bh);
+
+            // Wood Grain Lines
+            ctx.strokeStyle = "rgba(0,0,0,0.2)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(bx + 10, by + 15); ctx.lineTo(bx + bw - 10, by + 15);
+            ctx.moveTo(bx + 20, by + 35); ctx.lineTo(bx + bw - 20, by + 35);
+            ctx.stroke();
+
+            // Text
+            ctx.fillStyle = "#FFD700";
+            ctx.textAlign = "center";
+            ctx.font = "bold 26px Arial";
+            ctx.fillText("Score: " + score, canvas.width / 2, by + 35);
+        }
+
         function drawNewton() {
-            // Constraints to stay inside the thick vine border
             if (newtonX < 40) newtonX = 40;
             if (newtonX > canvas.width - 200) newtonX = canvas.width - 200;
 
-            ctx.fillStyle = "rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(newtonX + 85, 810, 55, 10, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.drawImage(newtonImg, newtonX, 620, 170, 195);
+            // LIFTED NEWTON: Moved Y up to 580 (was 620) to clear the border
+            const charY = 580; 
+            
+            ctx.fillStyle = "rgba(0,0,0,0.2)";
+            ctx.beginPath(); ctx.ellipse(newtonX + 85, charY + 185, 55, 10, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.drawImage(newtonImg, newtonX, charY, 170, 195);
         }
 
         function drawApple() {
-            // Draw the "Score Line" path
             ctx.setLineDash([5, 5]);
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-            ctx.beginPath();
-            ctx.moveTo(appleX, 0);
-            ctx.lineTo(appleX, appleY);
-            ctx.stroke();
-            ctx.setLineDash([]); // Reset dash
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.beginPath(); ctx.moveTo(appleX, 0); ctx.lineTo(appleX, appleY); ctx.stroke();
+            ctx.setLineDash([]);
 
             const appleGrad = ctx.createRadialGradient(appleX-4,appleY-6,2,appleX,appleY,16);
             appleGrad.addColorStop(0,isGolden?"#fff7b3":"#ff6b6b");
             appleGrad.addColorStop(1,isGolden?"#d4af37":"#b71c1c");
             ctx.fillStyle=appleGrad;
             ctx.beginPath(); ctx.arc(appleX,appleY,15,0,Math.PI*2); ctx.fill();
-            ctx.fillStyle="brown"; ctx.fillRect(appleX-1,appleY-22,2,10);
         }
 
         function resetApple() {
@@ -139,41 +135,14 @@
 
         function restartGame() {
             score = 0; speed = 5; gameOver = false;
-            bombs = []; particles = [];
-            resetApple();
-            gameLoop();
+            bombs = []; resetApple(); gameLoop();
         }
 
-        // Particle System
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.size = Math.random() * 5 + 2;
-                this.speedX = Math.random() * 6 - 3;
-                this.speedY = Math.random() * 6 - 3;
-                this.color = color;
-                this.alpha = 1;
-            }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.02; }
-            draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function createExplosion(x, y) {
-            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ffffff"];
-            for (let i = 0; i < 25; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
-            }
-        }
-
-        // Inputs
+        // Input Listeners
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
-        document.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft" || e.key === "a") keys.left = true; if (e.key === "ArrowRight" || e.key === "d") keys.right = true; });
-        document.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft" || e.key === "a") keys.left = false; if (e.key === "ArrowRight" || e.key === "d") keys.right = false; });
+        document.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") keys.left = true; if (e.key === "ArrowRight") keys.right = true; });
+        document.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") keys.left = false; if (e.key === "ArrowRight") keys.right = false; });
         leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
         leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
         rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
@@ -181,7 +150,6 @@
 
         function gameLoop() {
             if (gameOver) {
-                drawBackground();
                 ctx.fillStyle = "rgba(0,0,0,0.7)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
@@ -192,47 +160,34 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
-
-            // Particles
-            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i, 1); });
-            
             drawApple();
             drawNewton();
 
-            // Bombs
-            if (Math.random() < 0.01) {
-                bombs.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50, size: 45, speed: 4 + Math.random() * 2 });
-            }
+            // Bombs Logic
+            if (Math.random() < 0.01) bombs.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50, speed: 4 + Math.random() * 2 });
             for (let i = bombs.length - 1; i >= 0; i--) {
                 let b = bombs[i]; b.y += b.speed;
-                ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
-                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 630 && b.y < 780) {
-                    createExplosion(b.x + b.size/2, b.y + b.size/2);
-                    gameOver = true;
-                }
+                ctx.drawImage(bombImg, b.x, b.y, 45, 45);
+                // Hitbox adjusted for Newton's new Y height
+                if (b.x < newtonX + 130 && b.x + 45 > newtonX + 40 && b.y > 580 && b.y < 730) gameOver = true;
                 if (b.y > canvas.height) bombs.splice(i, 1);
             }
 
             if (keys.left) newtonX -= 12;
             if (keys.right) newtonX += 12;
 
-            // Scoreboard Top Middle
-            ctx.fillStyle = "#FFD700"; 
-            ctx.textAlign = "center";
-            ctx.font = "bold 32px Arial"; 
-            ctx.fillText("Score: " + score, canvas.width / 2, 100); 
+            drawScoreboard();
 
             appleY += speed;
-            if (appleY > 630 && appleY < 780 && appleX > newtonX && appleX < newtonX + 170) {
+            // Catching logic adjusted for new Newton Y (580 to 730 range)
+            if (appleY > 580 && appleY < 730 && appleX > newtonX && appleX < newtonX + 170) {
                 score += isGolden ? 5 : 1;
                 if (score % 10 === 0) speed += 0.5;
                 resetApple();
             }
             if (appleY > 830) gameOver = true;
 
-            // Vine Border Stretched
             ctx.drawImage(borderImg, -45, -45, canvas.width + 90, canvas.height + 90);
-
             requestAnimationFrame(gameLoop);
         }
 
