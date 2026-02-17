@@ -88,6 +88,9 @@
         const ctx = canvas.getContext("2d");
         const borderImg = new Image();
         borderImg.src = 'border.png'; // Make     sure the filename matches exactly
+const padding = 40;
+const margin = 80; // This is the "Safe Zone" thickness to clear the vines
+
 
 
         let backgroundImg = new Image();
@@ -179,16 +182,19 @@
         }
 
         function drawNewton(){
+const groundY = canvas.height - margin - 50; 
+if (newtonX < margin - 40) newtonX = margin - 40;
+    if (newtonX > canvas.width - margin - 130) newtonX = canvas.width - margin - 130;
             // Character Shadow
             ctx.fillStyle="rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(newtonX+85,565,55,10,0,0,Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(newtonX+85,groundY+10,55,10,0,0,Math.PI*2); ctx.fill();
             // Newton Sprite (Wider)
-            ctx.drawImage(newtonImg, newtonX, 370, 170, 195); 
+            ctx.drawImage(newtonImg, newtonX, groundY-175, 170, 195); 
         }
 
         // --- LOGIC FUNCTIONS ---
         function spawnBomb() {
-            let potentialX = Math.random() * (canvas.width - 40);
+            let potentialX = margin + Math.random() * (canvas.width - (margin * 2) - 40);
             let distanceToApple = Math.abs(potentialX - appleX);
             // Spawn fairness: doesn't spawn exactly on the apple
             if (Math.random() < 0.01&& distanceToApple > 120) { 
@@ -212,9 +218,9 @@
         }
 
         function resetApple(){
-            appleY = -20;
-            appleX = 40 + Math.random() * (canvas.width - 80);
-            isGolden = Math.random() < 0.2;
+            appleY = margin + 10; 
+            appleX = margin + 20 + Math.random() * (canvas.width - (margin * 2) - 40);
+            isGolden = Math.random() < 0.02;
         }
 
         function restartGame(){
@@ -229,49 +235,55 @@
     if (gameOver) {
         drawBackground();
         ctx.fillStyle = "rgba(0,0,0,0.7)"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(margin, margin, canvas.width - (margin*2), canvas.height - (margin*2));
         
-        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.fillStyle = "white"; 
+        ctx.textAlign = "center";
         ctx.font = "bold 40px Arial"; 
         ctx.fillText("GAME OVER", canvas.width / 2, 300);
         
-        // STRETCH BORDER ON GAME OVER
         ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
         return;
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw game world inside the margin
     drawBackground(); 
-
-    // Draw game objects
-    particles.forEach((p, i) => { p.update(); p.draw(); });
+    particles.forEach((p, i) => {
+        p.update(); p.draw();
+        if (p.alpha <= 0) particles.splice(i, 1);
+    });
     drawNewton();
     drawApple();
+    spawnBomb();
     updateBombs();
 
-    // Move Newton
-    if (keys.left && newtonX > -50) newtonX -= 8;
-    if (keys.right && newtonX < canvas.width - 100) newtonX += 8;
+    // Movement Controls
+    if (keys.left) newtonX -= 8;
+    if (keys.right) newtonX += 8;
 
-    // Move Score inward so the stretched leaves don't cover it
+    // --- UI SCORE ---
+    // Moved to (95, 120) so it's not covered by the top-left vines
     ctx.fillStyle = "#FFD700"; 
-    ctx.font = "bold 24px Arial"; 
-    ctx.fillText("Score: " + score, 60, 85); 
+    ctx.textAlign = "left";
+    ctx.font = "bold 26px Arial"; 
+    ctx.fillText("Score: " + score, 95, 120); 
 
-    // Apple logic
+    // Collision Logic
     appleY += speed;
-    if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
+    // Adjusted hit detection to match the new Newton position
+    if (appleY > 380 && appleY < 480 && appleX > newtonX && appleX < newtonX + 170) {
         score += isGolden ? 5 : 1;
+        if (score % 10 === 0) speed += 0.5;
         resetApple();
     }
-    if (appleY > canvas.height) { gameOver = true; }
+    if (appleY > canvas.height - margin) { gameOver = true; }
 
-    // --- THE STRETCH COMMAND ---
-    // This stretches the border to exactly 520x620 (or 620x620)
-    // Drawing from -5 to -5 and adding 10px to width/height 
-// ensures the border "bleeds" over the very edge of the canvas.
-ctx.drawImage(borderImg, -30, -30 ,canvas.width + 60, canvas.height + 60);
-
+    // --- FINAL BORDER LAYER ---
+    // Since we fixed the internal margins, we can draw the border 
+    // exactly at 0,0 to the canvas width/height.
+    ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
 
     requestAnimationFrame(gameLoop);
 }
