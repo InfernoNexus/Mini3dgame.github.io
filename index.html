@@ -5,50 +5,51 @@
     <title>Newton & Gravity</title>
     
     <style>
+        /* 1. Fix the background and prevent scrolling */
         body { 
             margin: 0; padding: 0; overflow: hidden;
             text-align: center; font-family: 'Arial Black', sans-serif; 
             background: #b0e2ff; display: flex; flex-direction: column; height: 100vh;
         }
         
-        /* Fixed Game Container to stop the stretching */
-        #game-container {
-            position: relative;
+        /* 2. Create a container that takes most of the screen but stays proportional */
+        #game-wrapper {
             width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            flex-shrink: 0;
-        }
-
-        canvas { 
-            display: block; 
-            width: 100%; 
-            height: auto; 
-            aspect-ratio: 1 / 1.1; /* Keeps the border looking natural */
-            background: #87ceeb;
-            touch-action: none;
-        }
-
-        /* The One-Lane Button UI */
-        #mobile-ui {
-            flex-grow: 1;
+            flex: 0 0 75%; /* Takes exactly 75% of the screen height */
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            padding-bottom: 20px; /* Adjust this to move the lane up/down */
+            background: #b0e2ff;
+        }
+
+        canvas { 
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Prevents stretching */
+            background: #87ceeb;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* 3. The Button Lane: Clean, horizontal, and moved UP */
+        #mobile-ui {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding-bottom: 40px; /* Moves buttons up from the bottom edge */
         }
 
         #leftBtn, #rightBtn {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 4px solid #ffe066; color: white; font-size: 35px;
+            width: 75px; height: 75px; border-radius: 50%;
+            border: 4px solid #ffe066; color: white; font-size: 30px;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
             box-shadow: 0 5px 0 #550000; display: flex; align-items: center; justify-content: center;
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
         .restart-btn {
-            font-size: 20px; padding: 15px 30px; border-radius: 15px;
+            font-size: 18px; padding: 15px 25px; border-radius: 12px;
             border: 3px solid #ffe066; background: linear-gradient(#ff4d4d, #990000);
             color: white; box-shadow: 0 5px #550000; cursor: pointer;
         }
@@ -60,8 +61,8 @@
 </head>
 
 <body>
-    <div id="game-container">
-        <canvas id="game" width="600" height="660"></canvas>
+    <div id="game-wrapper">
+        <canvas id="game" width="600" height="750"></canvas>
     </div>
 
     <div id="mobile-ui">
@@ -87,15 +88,14 @@
         const keys = { left: false, right: false };
 
         function drawBackground() {
-            // High intensity parallax
-            bgX = (canvas.width / 2 - newtonX) * 0.6;
-            ctx.drawImage(backgroundImg, bgX - 150, 0, canvas.width + 300, canvas.height);
+            bgX = (canvas.width / 2 - newtonX) * 0.5;
+            ctx.drawImage(backgroundImg, bgX - 100, 0, canvas.width + 200, canvas.height);
         }
 
         function drawScoreboard() {
-            // Positioned exactly in that tree gap you marked
+            // Positioned lower in the tree gap
             const bx = canvas.width / 2 - 80;
-            const by = 110; 
+            const by = 130; 
             const bw = 160;
             const bh = 50;
 
@@ -112,19 +112,17 @@
         }
 
         function drawNewton() {
-            // Horizontal limits to keep him inside the vines
-            if (newtonX < 75) newtonX = 75;
-            if (newtonX > canvas.width - 245) newtonX = canvas.width - 245;
+            if (newtonX < 70) newtonX = 70;
+            if (newtonX > canvas.width - 240) newtonX = canvas.width - 240;
 
-            const charY = 400; // Lifted him up so he's not behind the bottom vine
+            const charY = 480; // Lifted him high out of the bottom border
             
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.beginPath(); ctx.ellipse(newtonX + 85, charY + 185, 55, 10, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "rgba(0,0,0,0.15)";
+            ctx.beginPath(); ctx.ellipse(newtonX + 85, charY + 185, 50, 10, 0, 0, Math.PI * 2); ctx.fill();
             ctx.drawImage(newtonImg, newtonX, charY, 170, 195);
         }
 
         function drawApple() {
-            // No path line, just the apple
             const appleGrad = ctx.createRadialGradient(appleX-4,appleY-6,2,appleX,appleY,16);
             appleGrad.addColorStop(0,isGolden?"#fff7b3":"#ff6b6b");
             appleGrad.addColorStop(1,isGolden?"#d4af37":"#b71c1c");
@@ -133,8 +131,8 @@
         }
 
         function resetApple() {
-            appleY = 80; 
-            appleX = 130 + Math.random() * (canvas.width - 260);
+            appleY = 120; 
+            appleX = 120 + Math.random() * (canvas.width - 240);
             isGolden = Math.random() < 0.1;
         }
 
@@ -143,13 +141,17 @@
             bombs = []; resetApple(); gameLoop();
         }
 
+        // Single block of input listeners for better performance
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
 
-        leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
-        leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
-        rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
-        rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.right = false; });
+        const setLeft = (val) => { keys.left = val; };
+        const setRight = (val) => { keys.right = val; };
+
+        leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); setLeft(true); });
+        leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); setLeft(false); });
+        rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); setRight(true); });
+        rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); setRight(false); });
 
         function gameLoop() {
             if (gameOver) {
@@ -166,6 +168,38 @@
             drawApple();
             drawNewton();
 
-            // Rare bombs (0.4% chance)
             if (Math.random() < 0.004) {
-                bombs.push({ x: 130 + Math.random() * (canvas.width - 260), y: -50, speed: 4 });
+                bombs.push({ x: 120 + Math.random() * (canvas.width - 240), y: -50, speed: 4 });
+            }
+            
+            for (let i = bombs.length - 1; i >= 0; i--) {
+                let b = bombs[i]; b.y += b.speed;
+                ctx.drawImage(bombImg, b.x, b.y, 45, 45);
+                // Hitbox matches Newton's new Y position
+                if (b.x < newtonX + 130 && b.x + 45 > newtonX + 40 && b.y > 480 && b.y < 630) gameOver = true;
+                if (b.y > canvas.height) bombs.splice(i, 1);
+            }
+
+            if (keys.left) newtonX -= 12;
+            if (keys.right) newtonX += 12;
+
+            drawScoreboard();
+
+            appleY += speed;
+            if (appleY > 480 && appleY < 630 && appleX > newtonX && appleX < newtonX + 170) {
+                score += isGolden ? 5 : 1;
+                if (score % 10 === 0) speed += 0.5;
+                resetApple();
+            }
+            if (appleY > 730) gameOver = true;
+
+            // DRAW BORDER
+            ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(gameLoop);
+        }
+
+        resetApple();
+        gameLoop();
+    </script>
+</body>
+</html>
