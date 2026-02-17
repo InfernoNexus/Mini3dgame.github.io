@@ -9,21 +9,16 @@
         body { margin: 0; text-align: center; font-family: Arial; background: #b0e2ff; }
         
         canvas { 
-    display: block; 
-    margin: auto; 
-    border: none; 
-    padding: 0;
-    /* This ensures the canvas itself doesn't have rounded corners 
-       that might cut off your stretched border */
-    border-radius: 0; 
-    width: 100%;
-    max-width: 520px;
-    background: transparent;
-    /* Remove any old shadows that might be creating a gap effect */
-    box-shadow: none; 
-}
-
-
+            display: block; 
+            margin: auto; 
+            border: none; 
+            padding: 0;
+            border-radius: 0; 
+            width: 100%;
+            max-width: 520px;
+            background: transparent;
+            box-shadow: none; 
+        }
 
         /* Movement Controls - Hidden on Laptops */
         #controls { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
@@ -83,15 +78,14 @@
     </div>
 
     <script>
-        // --- ASSET LOADING ---
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
+
         const borderImg = new Image();
-        borderImg.src = 'border.png'; // Make     sure the filename matches exactly
-const padding = 40;
-const margin = 80; // This is the "Safe Zone" thickness to clear the vines
-
-
+        borderImg.src = 'border.png';
+        
+        // MARGIN Adjusted: Lowered to 45 so the "Big Mode" fills more screen
+        const margin = 45; 
 
         let backgroundImg = new Image();
         backgroundImg.src = 'background.png';
@@ -102,20 +96,17 @@ const margin = 80; // This is the "Safe Zone" thickness to clear the vines
         let bombImg = new Image();
         bombImg.src = 'bomb.png';
 
-        // --- GAME VARIABLES ---
         let newtonX = 215;
-        let appleX = Math.random() * 480;
+        let appleX = 300;
         let appleY = 0;
         let score = 0;
         let speed = 5;
         let gameOver = false;
         let isGolden = false;
-        let bgOffset = 0;
         let particles = [];
         let bombs = [];
         const keys = { left: false, right: false };
 
-        // --- PARTICLE SYSTEM ---
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y;
@@ -125,18 +116,10 @@ const margin = 80; // This is the "Safe Zone" thickness to clear the vines
                 this.color = color;
                 this.alpha = 1;
             }
-            update() { 
-                this.x += this.speedX; 
-                this.y += this.speedY; 
-                this.alpha -= 0.02; 
-            }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.02; }
             draw() {
-                ctx.save(); 
-                ctx.globalAlpha = this.alpha; 
-                ctx.fillStyle = this.color;
-                ctx.beginPath(); 
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
-                ctx.fill();
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
@@ -144,12 +127,10 @@ const margin = 80; // This is the "Safe Zone" thickness to clear the vines
         function createExplosion(x, y) {
             const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ffffff"];
             for (let i = 0; i < 25; i++) {
-                let color = colors[Math.floor(Math.random() * colors.length)];
-                particles.push(new Particle(x, y, color));
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
             }
         }
 
-        // --- INPUT HANDLING ---
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
             if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
@@ -159,17 +140,14 @@ const margin = 80; // This is the "Safe Zone" thickness to clear the vines
             if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
         });
 
-        const leftBtn = document.getElementById("leftBtn");
-        const rightBtn = document.getElementById("rightBtn");
         leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
         leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
         rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
         rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.right = false; });
 
-        // --- DRAWING FUNCTIONS ---
         function drawBackground() {
-            bgOffset = -newtonX * 0.1; // Dynamic Parallax
-            ctx.drawImage(backgroundImg, bgOffset - 20, 0, canvas.width + 40, canvas.height);
+            // BIG BACKGROUND: Draws to full canvas width/height
+            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
         }
 
         function drawApple(){
@@ -182,45 +160,20 @@ const margin = 80; // This is the "Safe Zone" thickness to clear the vines
         }
 
         function drawNewton(){
-const groundY = canvas.height - margin - 50; 
-if (newtonX < margin - 40) newtonX = margin - 40;
-    if (newtonX > canvas.width - margin - 130) newtonX = canvas.width - margin - 130;
-            // Character Shadow
+            const groundY = canvas.height - margin - 20; 
+            // Newton boundaries adjusted for "Big Mode"
+            if (newtonX < 10) newtonX = 10;
+            if (newtonX > canvas.width - 160) newtonX = canvas.width - 160;
+
             ctx.fillStyle="rgba(0,0,0,0.25)";
             ctx.beginPath(); ctx.ellipse(newtonX+85,groundY+10,55,10,0,0,Math.PI*2); ctx.fill();
-            // Newton Sprite (Wider)
             ctx.drawImage(newtonImg, newtonX, groundY-175, 170, 195); 
-        }
-
-        // --- LOGIC FUNCTIONS ---
-        function spawnBomb() {
-            let potentialX = margin + Math.random() * (canvas.width - (margin * 2) - 40);
-            let distanceToApple = Math.abs(potentialX - appleX);
-            // Spawn fairness: doesn't spawn exactly on the apple
-            if (Math.random() < 0.01&& distanceToApple > 120) { 
-                bombs.push({ x: potentialX, y: -50, size: 45, speed: 4 + Math.random() * 2 });
-            }
-        }
-
-        function updateBombs() {
-            for (let i = bombs.length - 1; i >= 0; i--) {
-                let b = bombs[i];
-                b.y += b.speed;
-                ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
-                
-                // Tightened Hitbox for fairness
-                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    createExplosion(b.x + b.size/2, b.y + b.size/2);
-                    gameOver = true;
-                }
-                if (b.y > canvas.height) bombs.splice(i, 1);
-            }
         }
 
         function resetApple(){
             appleY = margin + 10; 
             appleX = margin + 20 + Math.random() * (canvas.width - (margin * 2) - 40);
-            isGolden = Math.random() < 0.02;
+            isGolden = Math.random() < 0.1; // Slightly increased chance
         }
 
         function restartGame(){
@@ -230,76 +183,70 @@ if (newtonX < margin - 40) newtonX = margin - 40;
             gameLoop();
         }
 
-        // --- MAIN LOOP ---
         function gameLoop() {
-    if (gameOver) {
-        // Draw background but darkened
-        ctx.drawImage(backgroundImg, margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
-        
-        ctx.fillStyle = "white"; ctx.textAlign = "center";
-        ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
-        
-        // Always draw border last so it's on top
-        ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
-        return;
-    }
+            if (gameOver) {
+                drawBackground();
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white"; ctx.textAlign = "center";
+                ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
+                ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+                return;
+            }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
 
-    // --- START CLIPPING ---
-    // This creates a "mask" so nothing can bulge out of the vines
-    ctx.save(); 
-    ctx.beginPath();
-    ctx.rect(margin, margin, canvas.width - (margin * 2), canvas.height - (margin * 2));
-    ctx.clip(); 
+            // Only Clip things that fall (Apples/Bombs/Particles)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(margin, 0, canvas.width - (margin*2), canvas.height); 
+            ctx.clip();
 
-    // Everything drawn between ctx.save() and ctx.restore() 
-    // is now forced to stay INSIDE the vine window.
-    drawBackground();
-    particles.forEach((p, i) => {
-        p.update(); p.draw();
-        if (p.alpha <= 0) particles.splice(i, 1);
-    });
-    drawNewton();
-    drawApple();
-    
-    if (Math.random() < 0.01) {
-        bombs.push({ 
-            x: margin + Math.random() * (canvas.width - (margin * 2) - 45), 
-            y: margin, size: 45, speed: 4 + Math.random() * 2 
-        });
-    }
-    updateBombs();
+            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i, 1); });
+            drawApple();
+            
+            if (Math.random() < 0.01) {
+                bombs.push({ 
+                    x: margin + Math.random() * (canvas.width - (margin * 2) - 45), 
+                    y: -50, size: 45, speed: 4 + Math.random() * 2 
+                });
+            }
+            
+            for (let i = bombs.length - 1; i >= 0; i--) {
+                let b = bombs[i];
+                b.y += b.speed;
+                ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
+                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
+                    createExplosion(b.x + b.size/2, b.y + b.size/2);
+                    gameOver = true;
+                }
+                if (b.y > canvas.height) bombs.splice(i, 1);
+            }
+            ctx.restore();
 
-    ctx.restore(); 
-    // --- END CLIPPING ---
+            drawNewton();
 
-    // Movement Controls
-    if (keys.left) newtonX -= 8;
-    if (keys.right) newtonX += 8;
+            if (keys.left) newtonX -= 10;
+            if (keys.right) newtonX += 10;
 
-    // Score (Drawn outside clipping so it doesn't get cut off)
-    ctx.fillStyle = "#FFD700"; 
-    ctx.textAlign = "left";
-    ctx.font = "bold 24px Arial"; 
-    ctx.fillText("Score: " + score, 95, 125);
+            ctx.fillStyle = "#FFD700"; ctx.textAlign = "left";
+            ctx.font = "bold 24px Arial"; 
+            ctx.fillText("Score: " + score, 65, 80); // Positioned to clear corner leaves
 
-    // Physics/Collision
-    appleY += speed;
-    if (appleY > 380 && appleY < 480 && appleX > newtonX && appleX < newtonX + 170) {
-        score += isGolden ? 5 : 1;
-        if (score % 10 === 0) speed += 0.5;
-        resetApple();
-    }
-    if (appleY > canvas.height - margin) gameOver = true;
+            appleY += speed;
+            if (appleY > 380 && appleY < 480 && appleX > newtonX && appleX < newtonX + 170) {
+                score += isGolden ? 5 : 1;
+                if (score % 10 === 0) speed += 0.5;
+                resetApple();
+            }
+            if (appleY > canvas.height - 20) gameOver = true;
 
-    // The Border (Top Layer)
-    ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+            // DRAW BORDER LAST (Slightly larger to prevent thin gaps)
+            ctx.drawImage(borderImg, -5, -5, canvas.width + 10, canvas.height + 10);
 
-    requestAnimationFrame(gameLoop);
-}
+            requestAnimationFrame(gameLoop);
+        }
 
         resetApple();
         gameLoop();
