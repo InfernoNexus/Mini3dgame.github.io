@@ -76,14 +76,12 @@
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
         let bgOffset = 0; let shake = 0;
-        let newtonScaleY = 1; let bounceTimer = 0;
         let animationId;
         let particles = []; let bombs = []; let ambientLeaves = [];
         const keys = { left: false, right: false };
 
         const L_LIMIT = 60; const R_LIMIT = 560;
 
-        // Initialize Ambient Leaves
         for(let i=0; i<15; i++) {
             ambientLeaves.push({
                 x: Math.random() * 620, y: Math.random() * 620,
@@ -91,27 +89,39 @@
             });
         }
 
-        // --- PARTICLE SYSTEM (For Bomb Explosion) ---
+        // --- ENHANCED PARTICLE SYSTEM ---
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 8 + 2;
-                this.speedX = (Math.random() - 0.5) * 10;
-                this.speedY = (Math.random() - 0.5) * 10;
+                // BIGGER PARTICLES
+                this.size = Math.random() * 15 + 5; 
+                // FASTER SPREAD
+                this.speedX = (Math.random() - 0.5) * 18;
+                this.speedY = (Math.random() - 0.5) * 18;
                 this.color = color;
                 this.alpha = 1;
+                this.decay = Math.random() * 0.01 + 0.01;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.02; }
+            update() { 
+                this.x += this.speedX; 
+                this.y += this.speedY; 
+                this.alpha -= this.decay; 
+            }
             draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.save(); 
+                ctx.globalAlpha = this.alpha; 
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); 
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
+                ctx.fill();
                 ctx.restore();
             }
         }
 
         function createExplosion(x, y) {
-            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ffffff"];
-            for (let i = 0; i < 30; i++) {
+            // INCREASED PARTICLE COUNT TO 100
+            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ff0000", "#ffffff"];
+            for (let i = 0; i < 100; i++) {
                 particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
             }
         }
@@ -142,14 +152,9 @@
             else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
             else tilt *= 0.9;
 
-            if (bounceTimer > 0) {
-                newtonScaleY = 1 + Math.sin(bounceTimer * 0.5) * 0.15;
-                bounceTimer--;
-            } else { newtonScaleY = 1; }
-
             ctx.translate(newtonX + 85, 560);
             ctx.rotate(tilt);
-            ctx.scale(1, newtonScaleY); 
+            // Newton is now stable (no scaleY modulation)
             ctx.fillStyle="rgba(0,0,0,0.2)";
             ctx.beginPath(); ctx.ellipse(0, 0, 55, 10, 0, 0, Math.PI*2); ctx.fill();
             ctx.drawImage(newtonImg, -85, -190, 170, 195);
@@ -164,14 +169,14 @@
         function restartGame(){
             cancelAnimationFrame(animationId);
             score = 0; speed = 5; gameOver = false; 
-            bombs = []; particles = []; shake = 0; bounceTimer = 0;
+            bombs = []; particles = []; shake = 0;
             resetApple(); gameLoop();
         }
 
         function gameLoop() {
             if (gameOver) {
                 ctx.setTransform(1,0,0,1,0,0);
-                // Draw particles one last time so explosion shows on game over screen
+                // Keep drawing particles during Game Over so the big explosion finishes
                 particles.forEach((p, i) => { p.update(); p.draw(); });
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
@@ -194,11 +199,9 @@
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
             drawNewton();
             
-            // Draw Apple Photo
             const currentApple = isGolden ? goldenAppleImg : appleImg;
             ctx.drawImage(currentApple, appleX - 20, appleY - 20, 40, 40);
 
-            // Bombs
             if (Math.random() < 0.01) {
                 let px = L_LIMIT + Math.random() * (R_LIMIT - L_LIMIT - 45);
                 bombs.push({ x: px, y: -50, size: 45, speed: 4 + Math.random() * 2 });
@@ -208,8 +211,8 @@
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
                 if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    createExplosion(b.x + 22, b.y + 22); // Show explosion
-                    shake = 20; // Only shake on bomb hit
+                    createExplosion(b.x + 22, b.y + 22); 
+                    shake = 30; // Heavier shake for bigger explosion
                     gameOver = true;
                 }
                 if (b.y > canvas.height) bombs.splice(i, 1);
@@ -221,7 +224,7 @@
             appleY += speed;
             if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
                 score += isGolden ? 5 : 1; 
-                bounceTimer = 15; // Newton reacts (No screen shake)
+                // Removed bounceTimer/reaction logic
                 resetApple();
             }
             if (appleY > canvas.height) gameOver = true;
