@@ -263,7 +263,7 @@
 
     // --- THE STRETCH COMMAND ---
     // This stretches the border to exactly 520x620 (or 620x620)
-    ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(borderImg, -30, -30, canvas.width+60, canvas.height+60);
 
     requestAnimationFrame(gameLoop);
 }
