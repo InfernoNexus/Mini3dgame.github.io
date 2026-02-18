@@ -1,70 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Newton & Gravity</title>
     
     <style>
-        /* 1. ALLOW REFRESH: We changed 'hidden' to 'auto' on the Y axis */
-        html, body { 
-            margin: 0; padding: 0; 
-            overflow-x: hidden; 
-            overflow-y: auto; 
-            overscroll-behavior-y: contain; /* Helps with pull-to-refresh on some browsers */
-            text-align: center; font-family: 'Arial Black', sans-serif; 
-            background: #b0e2ff; height: 100%;
-        }
+        /* General Layout */
+        body { margin: 0; text-align: center; font-family: Arial; background: #b0e2ff; }
         
-        #game-wrapper {
-            width: 100%;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         canvas { 
-            display: block; 
-            max-width: 95%;
-            max-height: 70vh; 
-            aspect-ratio: 1 / 1;
-            background: transparent;
-            /* 2. TOUCH ACTION: Changed to 'pan-y' so the browser sees your swipe-down */
-            touch-action: pan-y; 
-        }
+    display: block; 
+    margin: auto; 
+    border: none; /* Already removed, good! */
+    border-radius: 0; /* Keeps it sharp for the frame */
+    width: 95%; 
+    max-width: 520px; 
+    background: transparent; /* Add this */
+}
 
-        #mobile-ui {
-            padding: 20px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
 
-        #controls { display: flex; gap: 30px; }
 
+        /* Movement Controls - Hidden on Laptops */
+        #controls { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
+        @media (hover: hover) and (pointer: fine) { #controls { display: none; } }
+
+        /* 3D Action Buttons */
         #leftBtn, #rightBtn {
             width: 80px; height: 80px; border-radius: 50%;
-            border: 4px solid #ffe066; color: white; font-size: 35px;
+            border: 3px solid #ffe066; color: white;
+            font-size: 30px; font-weight: bold; cursor: pointer;
+            position: relative; transition: transform 0.1s;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
-            box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 0 #550000, 0 0 20px rgba(255, 215, 0, 0.9);
+            display: flex; align-items: center; justify-content: center;
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
+        #leftBtn::before, #rightBtn::before {
+            content: ''; position: absolute;
+            top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border-radius: 50%; border: 4px solid #ffd700;
+            box-shadow: 0 0 15px #ffcc00, inset 0 0 10px #ffcc00;
+            animation: aura-glow 1.5s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes aura-glow {
+            0%, 100% { transform: scale(1); opacity: 0.6; filter: blur(1px); }
+            50% { transform: scale(1.1); opacity: 1; filter: blur(2px); }
+        }
+
         .restart-btn {
-            font-size: 18px; padding: 12px 30px; border-radius: 12px;
-            border: 3px solid #ffe066; background: linear-gradient(#ff4d4d, #990000);
-            color: white; box-shadow: 0 5px #550000; cursor: pointer;
+            margin-top: 15px; font-size: 20px; font-weight: bold;
+            padding: 12px 30px; border-radius: 12px; border: 3px solid #ffe066;
+            background: linear-gradient(#ff4d4d, #990000); color: white;
+            box-shadow: 0 5px #550000, 0 0 20px rgba(255, 215, 0, 0.6);
+            cursor: pointer;
+        }
+
+        #leftBtn:active, #rightBtn:active, .restart-btn:active {
+            transform: translateY(4px); box-shadow: 0 2px #330000;
         }
     </style>
 </head>
 
 <body>
-    <div style="height: 20px;"></div>
-
-    <div id="game-wrapper">
-        <canvas id="game" width="650" height="650"></canvas>
-    </div>
+    <h2>🍎 Newton & Gravity 🍎</h2>
+    
+    <canvas id="game" width="620" height="620"></canvas>
 
     <div id="mobile-ui">
         <div id="controls">
@@ -75,91 +78,198 @@
     </div>
 
     <script>
+        // --- ASSET LOADING ---
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
+        const borderImg = new Image();
+        borderImg.src = 'border.png'; // Make     sure the filename matches exactly
 
-        const BORDER_EDGE = 60; 
-        const borderImg = new Image(); borderImg.src = 'border.png';
-        const backgroundImg = new Image(); backgroundImg.src = 'background.png';
-        const newtonImg = new Image(); newtonImg.src = 'newton.png';
-        const bombImg = new Image(); bombImg.src = 'bomb.png';
 
-        let newtonX = 240;
-        let appleX = 325; let appleY = -50;
-        let score = 0; let speed = 5;
-        let gameOver = false; let isGolden = false;
+        let backgroundImg = new Image();
+        backgroundImg.src = 'background.png';
+        
+        let newtonImg = new Image();
+        newtonImg.src = 'newton.png';
+        
+        let bombImg = new Image();
+        bombImg.src = 'bomb.png';
+
+        // --- GAME VARIABLES ---
+        let newtonX = 215;
+        let appleX = Math.random() * 480;
+        let appleY = 0;
+        let score = 0;
+        let speed = 5;
+        let gameOver = false;
+        let isGolden = false;
+        let bgOffset = 0;
+        let particles = [];
         let bombs = [];
         const keys = { left: false, right: false };
 
-        function drawBackground() {
-            let bgShift = (canvas.width / 2 - newtonX) * 0.2;
-            ctx.drawImage(backgroundImg, -100 + bgShift, 0, canvas.width + 200, canvas.height);
-        }
-
-        // --- NEW TOP MIDDLE SCOREBOARD ---
-        function drawScoreboard() {
-            const sw = 180; const sh = 55;
-            const sx = (canvas.width / 2) - (sw / 2);
-            const sy = 70; 
-
-            // Emerald Glass Effect
-            ctx.fillStyle = "rgba(20, 60, 40, 0.85)"; 
-            ctx.strokeStyle = "#a7ff83"; 
-            ctx.lineWidth = 3;
-            
-            // Rounded Box
-            ctx.beginPath();
-            ctx.roundRect(sx, sy, sw, sh, 10);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 24px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, canvas.width / 2, sy + 35);
-        }
-
-        function resetApple() {
-            appleY = 130; 
-            appleX = BORDER_EDGE + 50 + Math.random() * (canvas.width - (BORDER_EDGE * 2) - 100);
-            isGolden = Math.random() < 0.15;
-        }
-
-        function restartGame() {
-            score = 0; speed = 5; gameOver = false;
-            bombs = []; newtonX = 240;
-            resetApple();
-            gameLoop(); 
-        }
-
-        // Optimized Touch Handling
-        const handleTouch = (key, val) => (e) => {
-            e.preventDefault();
-            keys[key] = val;
-        };
-
-        document.getElementById("leftBtn").addEventListener("touchstart", handleTouch("left", true));
-        document.getElementById("leftBtn").addEventListener("touchend", handleTouch("left", false));
-        document.getElementById("rightBtn").addEventListener("touchstart", handleTouch("right", true));
-        document.getElementById("rightBtn").addEventListener("touchend", handleTouch("right", false));
-
-        function gameLoop() {
-            if (gameOver) {
-                ctx.fillStyle = "rgba(0,0,0,0.7)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "white"; ctx.textAlign = "center";
-                ctx.font = "bold 50px Arial"; ctx.fillText("GAME OVER", canvas.width/2, 325);
-                ctx.drawImage(borderImg, -5, -5, canvas.width + 10, canvas.height + 10);
-                return;
+        // --- PARTICLE SYSTEM ---
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = Math.random() * 6 - 3;
+                this.speedY = Math.random() * 6 - 3;
+                this.color = color;
+                this.alpha = 1;
             }
+            update() { 
+                this.x += this.speedX; 
+                this.y += this.speedY; 
+                this.alpha -= 0.02; 
+            }
+            draw() {
+                ctx.save(); 
+                ctx.globalAlpha = this.alpha; 
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); 
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
+                ctx.fill();
+                ctx.restore();
+            }
+        }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
+        function createExplosion(x, y) {
+            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ffffff"];
+            for (let i = 0; i < 25; i++) {
+                let color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(x, y, color));
+            }
+        }
 
-            if (keys.left && newtonX > BORDER_EDGE - 20) newtonX -= 12;
-            if (keys.right && newtonX < canvas.width - BORDER_EDGE - 150) newtonX += 12;
+        // --- INPUT HANDLING ---
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
+            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
+            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
+        });
 
-            ctx.drawImage(newtonImg, newtonX, 400, 170, 195);
-            
-            // Apple
-            ctx.fillStyle
+        const leftBtn = document.getElementById("leftBtn");
+        const rightBtn = document.getElementById("rightBtn");
+        leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
+        leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
+        rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
+        rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.right = false; });
+
+        // --- DRAWING FUNCTIONS ---
+        function drawBackground() {
+            bgOffset = -newtonX * 0.1; // Dynamic Parallax
+            ctx.drawImage(backgroundImg, bgOffset - 20, 0, canvas.width + 40, canvas.height);
+        }
+
+        function drawApple(){
+            const appleGrad = ctx.createRadialGradient(appleX-4,appleY-6,2,appleX,appleY,16);
+            appleGrad.addColorStop(0,isGolden?"#fff7b3":"#ff6b6b");
+            appleGrad.addColorStop(1,isGolden?"#d4af37":"#b71c1c");
+            ctx.fillStyle=appleGrad;
+            ctx.beginPath(); ctx.arc(appleX,appleY,15,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle="brown"; ctx.fillRect(appleX-1,appleY-22,2,10);
+        }
+
+        function drawNewton(){
+            // Character Shadow
+            ctx.fillStyle="rgba(0,0,0,0.25)";
+            ctx.beginPath(); ctx.ellipse(newtonX+85,565,55,10,0,0,Math.PI*2); ctx.fill();
+            // Newton Sprite (Wider)
+            ctx.drawImage(newtonImg, newtonX, 370, 170, 195); 
+        }
+
+        // --- LOGIC FUNCTIONS ---
+        function spawnBomb() {
+            let potentialX = Math.random() * (canvas.width - 40);
+            let distanceToApple = Math.abs(potentialX - appleX);
+            // Spawn fairness: doesn't spawn exactly on the apple
+            if (Math.random() < 0.01&& distanceToApple > 120) { 
+                bombs.push({ x: potentialX, y: -50, size: 45, speed: 4 + Math.random() * 2 });
+            }
+        }
+
+        function updateBombs() {
+            for (let i = bombs.length - 1; i >= 0; i--) {
+                let b = bombs[i];
+                b.y += b.speed;
+                ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
+                
+                // Tightened Hitbox for fairness
+                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
+                    createExplosion(b.x + b.size/2, b.y + b.size/2);
+                    gameOver = true;
+                }
+                if (b.y > canvas.height) bombs.splice(i, 1);
+            }
+        }
+
+        function resetApple(){
+            appleY = -20;
+            appleX = 40 + Math.random() * (canvas.width - 80);
+            isGolden = Math.random() < 0.2;
+        }
+
+        function restartGame(){
+            score = 0; speed = 5; gameOver = false;
+            bombs = []; particles = [];
+            resetApple();
+            gameLoop();
+        }
+
+        // --- MAIN LOOP ---
+        function gameLoop() {
+    if (gameOver) {
+        drawBackground();
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.font = "bold 40px Arial"; 
+        ctx.fillText("GAME OVER", canvas.width / 2, 300);
+        
+        // STRETCH BORDER ON GAME OVER
+        ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+        return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground(); 
+
+    // Draw game objects
+    particles.forEach((p, i) => { p.update(); p.draw(); });
+    drawNewton();
+    drawApple();
+    updateBombs();
+
+    // Move Newton
+    if (keys.left && newtonX > -50) newtonX -= 8;
+    if (keys.right && newtonX < canvas.width - 100) newtonX += 8;
+
+    // Move Score inward so the stretched leaves don't cover it
+    ctx.fillStyle = "#FFD700"; 
+    ctx.font = "bold 24px Arial"; 
+    ctx.fillText("Score: " + score, 60, 85); 
+
+    // Apple logic
+    appleY += speed;
+    if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
+        score += isGolden ? 5 : 1;
+        resetApple();
+    }
+    if (appleY > canvas.height) { gameOver = true; }
+
+    // --- THE STRETCH COMMAND ---
+    // This stretches the border to exactly 520x620 (or 620x620)
+    ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+
+    requestAnimationFrame(gameLoop);
+}
+
+        resetApple();
+        gameLoop();
+    </script>
+</body>
+</html>
