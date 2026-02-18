@@ -5,25 +5,14 @@
     <title>Newton & Gravity</title>
     
     <style>
-        /* ALLOW REFRESH: Enabled vertical scroll for the browser loading bar */
         body { 
-            margin: 0; 
-            text-align: center; 
-            font-family: Arial; 
-            background: #b0e2ff; 
-            overflow-x: hidden; 
-            overflow-y: auto; 
-            overscroll-behavior-y: contain; 
+            margin: 0; text-align: center; font-family: Arial; background: #b0e2ff; 
+            overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; 
         }
         
         canvas { 
-            display: block; 
-            margin: 10px auto 0 auto; 
-            width: 95%; 
-            max-width: 520px; 
-            background: transparent; 
-            /* ALLOW REFRESH: Let the browser see vertical swipes */
-            touch-action: pan-y; 
+            display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; 
+            background: transparent; touch-action: pan-y;
         }
 
         #controls { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
@@ -37,7 +26,9 @@
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
             box-shadow: 0 6px 0 #550000, 0 0 20px rgba(255, 215, 0, 0.9);
             display: flex; align-items: center; justify-content: center;
-            outline: none; -webkit-tap-highlight-color: transparent;
+            outline: none;
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; 
         }
 
         .restart-btn {
@@ -45,6 +36,7 @@
             padding: 12px 30px; border-radius: 12px; border: 3px solid #ffe066;
             background: linear-gradient(#ff4d4d, #990000); color: white;
             box-shadow: 0 5px #550000; cursor: pointer;
+            user-select: none; -webkit-touch-callout: none;
         }
 
         #leftBtn:active, #rightBtn:active, .restart-btn:active {
@@ -61,8 +53,8 @@
 
     <div id="mobile-ui">
         <div id="controls">
-            <button id="leftBtn">◀</button>
-            <button id="rightBtn">▶</button>
+            <button id="leftBtn" oncontextmenu="return false;">◀</button>
+            <button id="rightBtn" oncontextmenu="return false;">▶</button>
         </div>
         <button class="restart-btn" onclick="restartGame()">Restart Game</button>
     </div>
@@ -75,118 +67,75 @@
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
         const bombImg = new Image(); bombImg.src = 'bomb.png';
 
-        let newtonX = 215;
+        let newtonX = 215; let tilt = 0;
         let appleX = 300; let appleY = 0;
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
-        let bgOffset = 0; let particles = []; let bombs = [];
+        let bgOffset = 0; let shake = 0;
+        let particles = []; let bombs = []; let ambientLeaves = [];
         const keys = { left: false, right: false };
 
-        const L_LIMIT = 60; 
-        const R_LIMIT = 560;
+        const L_LIMIT = 60; const R_LIMIT = 560;
 
-        // --- UPDATED SCOREBOARD: MOVED UP TO TOUCH THE FRAME ---
+        // Initialize Ambient Leaves
+        for(let i=0; i<15; i++) {
+            ambientLeaves.push({
+                x: Math.random() * 620, y: Math.random() * 620,
+                s: 0.5 + Math.random(), r: Math.random() * Math.PI
+            });
+        }
+
         function drawScoreboard() {
-            const rectWidth = 160;
-            const rectHeight = 45;
-            const x = (canvas.width / 2) - (rectWidth / 2);
-            const y = 20; // HIGHER: Now touches the top edge of the frame
-
-            // Hanging Ropes/Links
-            ctx.fillStyle = "#3e2723";
-            ctx.fillRect(x + 30, y - 20, 4, 20);
-            ctx.fillRect(x + rectWidth - 34, y - 20, 4, 20);
-
-            // Wooden Frame (Outer)
-            ctx.fillStyle = "#5d4037"; 
-            ctx.fillRect(x, y, rectWidth, rectHeight);
-            
-            // Wooden Inner
-            ctx.fillStyle = "#795548";
-            ctx.fillRect(x + 4, y + 4, rectWidth - 8, rectHeight - 8);
-
-            // Score Text
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 20px Arial";
-            ctx.textAlign = "center";
+            const rw = 160, rh = 45;
+            const x = (canvas.width / 2) - (rw / 2), y = 20;
+            ctx.fillStyle = "#3e2723"; ctx.fillRect(x + 30, y - 20, 4, 20); ctx.fillRect(x + rw - 34, y - 20, 4, 20);
+            ctx.fillStyle = "#5d4037"; ctx.fillRect(x, y, rw, rh);
+            ctx.fillStyle = "#795548"; ctx.fillRect(x + 4, y + 4, rw - 8, rh - 8);
+            ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
             ctx.fillText("Score: " + score, canvas.width / 2, y + 29);
         }
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.size = Math.random() * 5 + 2;
-                this.speedX = Math.random() * 6 - 3;
-                this.speedY = Math.random() * 6 - 3;
-                this.color = color;
-                this.alpha = 1;
-            }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.02; }
-            draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function createExplosion(x, y) {
-            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ffffff"];
-            for (let i = 0; i < 25; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
-            }
-        }
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowLeft" || e.key === "a") keys.left = true;
-            if (e.key === "ArrowRight" || e.key === "d") keys.right = true;
-        });
-        document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowLeft" || e.key === "a") keys.left = false;
-            if (e.key === "ArrowRight" || e.key === "d") keys.right = false;
-        });
-
-        // Use pointer events to keep control responsive while allowing swipe
-        const leftBtn = document.getElementById("leftBtn");
-        const rightBtn = document.getElementById("rightBtn");
-        leftBtn.onpointerdown = () => { keys.left = true; };
-        leftBtn.onpointerup = () => { keys.left = false; };
-        leftBtn.onpointerout = () => { keys.left = false; };
-        rightBtn.onpointerdown = () => { keys.right = true; };
-        rightBtn.onpointerup = () => { keys.right = false; };
-        rightBtn.onpointerout = () => { keys.right = false; };
-
-        function drawBackground() {
-            bgOffset = (canvas.width / 2 - newtonX) * 0.15;
-            ctx.drawImage(backgroundImg, -80 + bgOffset, 0, canvas.width + 160, canvas.height);
-        }
-
-        function drawApple(){
-            const appleGrad = ctx.createRadialGradient(appleX-4,appleY-6,2,appleX,appleY,16);
-            appleGrad.addColorStop(0,isGolden?"#fff7b3":"#ff6b6b");
-            appleGrad.addColorStop(1,isGolden?"#d4af37":"#b71c1c");
-            ctx.fillStyle=appleGrad;
-            ctx.beginPath(); ctx.arc(appleX,appleY,15,0,Math.PI*2); ctx.fill();
+        function drawAmbient() {
+            ctx.fillStyle = "rgba(34, 139, 34, 0.3)";
+            ambientLeaves.forEach(l => {
+                l.y += l.s; l.x += Math.sin(l.y/50);
+                if(l.y > 620) l.y = -20;
+                ctx.save();
+                ctx.translate(l.x, l.y); ctx.rotate(l.y/100);
+                ctx.fillRect(-5, -5, 8, 4); ctx.restore();
+            });
         }
 
         function drawNewton(){
-            ctx.fillStyle="rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(newtonX+85, 565, 55, 10, 0, 0, Math.PI*2); ctx.fill();
-            ctx.drawImage(newtonImg, newtonX, 370, 170, 195); 
+            ctx.save();
+            // Momentum Tilt logic
+            if(keys.left) tilt = Math.max(tilt - 0.02, -0.1);
+            else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
+            else tilt *= 0.9;
+
+            ctx.translate(newtonX + 85, 467);
+            ctx.rotate(tilt);
+            // Shadow
+            ctx.fillStyle="rgba(0,0,0,0.2)";
+            ctx.beginPath(); ctx.ellipse(0, 95, 55, 10, 0, 0, Math.PI*2); ctx.fill();
+            // Image
+            ctx.drawImage(newtonImg, -85, -97, 170, 195);
+            ctx.restore();
         }
 
         function resetApple(){
-            appleY = 80; // Reset just below the new scoreboard position
-            appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
+            appleY = 80; appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
             isGolden = Math.random() < 0.2;
         }
 
         function restartGame(){
-            score = 0; speed = 5; gameOver = false; bombs = []; particles = [];
+            score = 0; speed = 5; gameOver = false; bombs = []; particles = []; shake = 0;
             resetApple(); gameLoop();
         }
 
         function gameLoop() {
             if (gameOver) {
+                ctx.setTransform(1,0,0,1,0,0);
                 drawBackground();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
@@ -195,23 +144,37 @@
                 return;
             }
 
+            // Screen Shake Logic
+            ctx.setTransform(1,0,0,1,0,0);
+            if (shake > 0) {
+                ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
+                shake *= 0.9;
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground(); 
+            bgOffset = (canvas.width / 2 - newtonX) * 0.15;
+            ctx.drawImage(backgroundImg, -80 + bgOffset, 0, canvas.width + 160, canvas.height);
 
-            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
+            drawAmbient();
             drawNewton();
-            drawApple();
+            
+            // Apple
+            const appleGrad = ctx.createRadialGradient(appleX-4,appleY-6,2,appleX,appleY,16);
+            appleGrad.addColorStop(0,isGolden?"#fff7b3":"#ff6b6b");
+            appleGrad.addColorStop(1,isGolden?"#d4af37":"#b71c1c");
+            ctx.fillStyle=appleGrad; ctx.beginPath(); ctx.arc(appleX,appleY,15,0,Math.PI*2); ctx.fill();
 
+            // Bombs
             if (Math.random() < 0.01) {
                 let px = L_LIMIT + Math.random() * (R_LIMIT - L_LIMIT - 45);
-                if (Math.abs(px - appleX) > 120) bombs.push({ x: px, y: -50, size: 45, speed: 4 + Math.random() * 2 });
+                bombs.push({ x: px, y: -50, size: 45, speed: 4 + Math.random() * 2 });
             }
 
             for (let i = bombs.length - 1; i >= 0; i--) {
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
                 if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    createExplosion(b.x + b.size/2, b.y + b.size/2);
+                    shake = 15; // Trigger shake
                     gameOver = true;
                 }
                 if (b.y > canvas.height) bombs.splice(i, 1);
@@ -222,20 +185,23 @@
 
             appleY += speed;
             if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
-                score += isGolden ? 5 : 1;
-                resetApple();
+                score += isGolden ? 5 : 1; resetApple();
             }
             if (appleY > canvas.height) gameOver = true;
 
             drawScoreboard(); 
-            // Frame is drawn last so it stays on top of Newton and the Apple
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
-
             requestAnimationFrame(gameLoop);
         }
 
-        resetApple();
-        gameLoop();
+        // Controls
+        const l = document.getElementById("leftBtn"), r = document.getElementById("rightBtn");
+        l.onpointerdown = (e) => { e.preventDefault(); keys.left = true; };
+        l.onpointerup = l.onpointerout = (e) => { e.preventDefault(); keys.left = false; };
+        r.onpointerdown = (e) => { e.preventDefault(); keys.right = true; };
+        r.onpointerup = r.onpointerout = (e) => { e.preventDefault(); keys.right = false; };
+
+        resetApple(); gameLoop();
     </script>
 </body>
 </html>
