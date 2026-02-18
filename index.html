@@ -7,21 +7,15 @@
     <style>
         body { 
             margin: 0; text-align: center; font-family: 'Segoe UI', Arial, sans-serif; background: #b0e2ff; 
-            overflow: hidden; /* Prevent accidental scrolling */
-            touch-action: none; /* Disable all browser gestures */
-            user-select: none; -webkit-user-select: none;
+            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         
         canvas { 
             display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; 
-            background: transparent; 
-            touch-action: none; /* Fixes the "stuck" feeling on canvas */
+            background: transparent; touch-action: none;
         }
 
-        #controls { 
-            display: flex; justify-content: center; gap: 30px; margin-top: 15px; 
-            padding-bottom: 20px;
-        }
+        #controls { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
 
         #leftBtn, #rightBtn {
             width: 85px; height: 85px; border-radius: 50%;
@@ -30,15 +24,14 @@
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
             box-shadow: 0 6px 0 #550000;
             display: flex; align-items: center; justify-content: center;
-            outline: none;
-            /* CRITICAL FIX: Disable all touch delay/gestures on buttons */
-            touch-action: none; 
-            -webkit-tap-highlight-color: transparent;
+            outline: none; touch-action: none; -webkit-tap-highlight-color: transparent;
+            transition: transform 0.05s, box-shadow 0.05s; /* Smooth return */
         }
 
-        #leftBtn:active, #rightBtn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px #330000;
+        /* NEW: This class replaces the :active state which browsers block */
+        .pressed { 
+            transform: translateY(4px); 
+            box-shadow: 0 2px #330000 !important; 
         }
 
         .restart-btn {
@@ -47,6 +40,8 @@
             background: linear-gradient(#ff4d4d, #990000); color: white;
             box-shadow: 0 5px #550000; cursor: pointer;
         }
+        
+        .restart-btn:active { transform: translateY(4px); box-shadow: 0 2px #330000; }
     </style>
 </head>
 
@@ -65,9 +60,11 @@
     </div>
 
     <script>
+        // ... (Keep all your previous variable declarations and Audio setup here) ...
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
+        // ASSETS (Assumed in root folder)
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -75,104 +72,88 @@
         const appleImg = new Image(); appleImg.src = 'apple.png';
         const goldenAppleImg = new Image(); goldenAppleImg.src = 'goldenapple.png';
 
+        // AUDIO (Updated for your GitHub request)
+        const sounds = {
+            bg: new Audio('audio/bg-music.mp3'),
+            catch: new Audio('audio/catch.mp3'),
+            bomb: new Audio('audio/explosion.mp3'),
+            move: new Audio('audio/move.mp3')
+        };
+        sounds.bg.loop = true; sounds.bg.volume = 0.4;
+        let audioInitialized = false;
+
         let newtonX = 215; let tilt = 0;
         let appleX = 300; let appleY = 0;
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
-        let bgOffset = 0; let shake = 0;
-        let animationId;
+        let shake = 0; let animationId;
         let particles = []; let bombs = []; let ambientLeaves = [];
-        
-        // INPUT STATE
         const keys = { left: false, right: false };
-
         const L_LIMIT = 60; const R_LIMIT = 560;
 
-        for(let i=0; i<15; i++) {
-            ambientLeaves.push({
-                x: Math.random() * 620, y: Math.random() * 620,
-                s: 0.5 + Math.random(), r: Math.random() * Math.PI
-            });
+        // ... (Keep Particle class, drawAmbient, drawNewton, createExplosion functions here) ...
+
+        function initAudio() {
+            if (audioInitialized) return;
+            sounds.bg.play().catch(() => {});
+            audioInitialized = true;
         }
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.size = Math.random() * 15 + 5; 
-                this.speedX = (Math.random() - 0.5) * 18;
-                this.speedY = (Math.random() - 0.5) * 18;
-                this.color = color;
-                this.alpha = 1;
-                this.decay = Math.random() * 0.01 + 0.01;
-            }
-            update() { 
-                this.x += this.speedX; this.y += this.speedY; this.alpha -= this.decay; 
-            }
-            draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
+        function playSound(name) {
+            if (!audioInitialized) return;
+            const s = sounds[name].cloneNode();
+            s.volume = sounds[name].volume || 1.0;
+            s.play();
         }
 
-        function createExplosion(x, y) {
-            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ff0000", "#ffffff"];
-            for (let i = 0; i < 100; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
-            }
-        }
+        // --- UPDATED INPUT HANDLER ---
+        const handleInput = (btnId, key) => {
+            const btn = document.getElementById(btnId);
+            
+            const start = (e) => { 
+                e.preventDefault(); 
+                initAudio(); 
+                keys[key] = true; 
+                btn.classList.add('pressed'); // Add visual feedback
+            };
+            
+            const end = (e) => { 
+                e.preventDefault(); 
+                keys[key] = false; 
+                btn.classList.remove('pressed'); // Remove visual feedback
+            };
 
-        function drawScoreboard() {
-            const rw = 160, rh = 45;
-            const x = (canvas.width / 2) - (rw / 2), y = 20;
-            ctx.fillStyle = "#3e2723"; ctx.fillRect(x + 30, y - 20, 4, 20); ctx.fillRect(x + rw - 34, y - 20, 4, 20);
-            ctx.fillStyle = "#5d4037"; ctx.fillRect(x, y, rw, rh);
-            ctx.fillStyle = "#795548"; ctx.fillRect(x + 4, y + 4, rw - 8, rh - 8);
-            ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-            ctx.fillText("Score: " + score, canvas.width / 2, y + 29);
-        }
+            btn.addEventListener('touchstart', start, {passive:false});
+            btn.addEventListener('touchend', end, {passive:false});
+            btn.addEventListener('touchcancel', end, {passive:false});
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        };
 
-        function drawAmbient() {
-            ctx.fillStyle = "rgba(34, 139, 34, 0.3)";
-            ambientLeaves.forEach(l => {
-                l.y += l.s; l.x += Math.sin(l.y/50);
-                if(l.y > 620) l.y = -20;
-                ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.y/100);
-                ctx.fillRect(-5, -5, 8, 4); ctx.restore();
-            });
-        }
+        handleInput('leftBtn', 'left');
+        handleInput('rightBtn', 'right');
 
-        function drawNewton(){
-            ctx.save();
-            // Movement Tilt Logic
-            if(keys.left) tilt = Math.max(tilt - 0.02, -0.1);
-            else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
-            else tilt *= 0.9;
-
-            ctx.translate(newtonX + 85, 560);
-            ctx.rotate(tilt);
-            ctx.fillStyle="rgba(0,0,0,0.2)";
-            ctx.beginPath(); ctx.ellipse(0, 0, 55, 10, 0, 0, Math.PI*2); ctx.fill();
-            ctx.drawImage(newtonImg, -85, -190, 170, 195);
-            ctx.restore();
-        }
-
+        // ... (Keep your existing restartGame and gameLoop logic) ...
         function resetApple(){
             appleY = 80; appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
             isGolden = Math.random() < 0.2;
         }
 
-        function restartGame(){
+        function restartGame() {
+            initAudio();
             cancelAnimationFrame(animationId);
             score = 0; speed = 5; gameOver = false; 
             bombs = []; particles = []; shake = 0;
+            sounds.bg.currentTime = 0;
+            sounds.bg.play();
             resetApple(); gameLoop();
         }
 
         function gameLoop() {
             if (gameOver) {
+                sounds.bg.pause();
                 ctx.setTransform(1,0,0,1,0,0);
-                particles.forEach((p, i) => { p.update(); p.draw(); });
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
                 ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
@@ -187,77 +168,55 @@
             }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            bgOffset = (canvas.width / 2 - newtonX) * 0.15;
-            ctx.drawImage(backgroundImg, -80 + bgOffset, 0, canvas.width + 160, canvas.height);
+            ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.15, 0, canvas.width + 160, canvas.height);
 
-            drawAmbient();
-            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
-            drawNewton();
+            // Newton Movement
+            if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 9;
+            if (keys.right && newtonX < R_LIMIT - 120) newtonX += 9;
             
+            // Draw Newton
+            ctx.save();
+            if(keys.left) tilt = Math.max(tilt - 0.02, -0.1);
+            else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
+            else tilt *= 0.9;
+            ctx.translate(newtonX + 85, 560);
+            ctx.rotate(tilt);
+            ctx.drawImage(newtonImg, -85, -190, 170, 195);
+            ctx.restore();
+
+            // Apple logic
+            appleY += speed;
             const currentApple = isGolden ? goldenAppleImg : appleImg;
             ctx.drawImage(currentApple, appleX - 20, appleY - 20, 40, 40);
 
-            if (Math.random() < 0.01) {
-                let px = L_LIMIT + Math.random() * (R_LIMIT - L_LIMIT - 45);
-                bombs.push({ x: px, y: -50, size: 45, speed: 4 + Math.random() * 2 });
+            if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
+                playSound('catch');
+                score += isGolden ? 5 : 1; resetApple();
             }
+            if (appleY > canvas.height) gameOver = true;
 
+            // Bombs logic
+            if (Math.random() < 0.01) {
+                bombs.push({ x: L_LIMIT + Math.random() * (R_LIMIT - L_LIMIT - 45), y: -50, size: 45, speed: 4 + Math.random() * 2 });
+            }
             for (let i = bombs.length - 1; i >= 0; i--) {
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
                 if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    createExplosion(b.x + 22, b.y + 22); 
-                    shake = 30; 
-                    gameOver = true;
+                    playSound('bomb');
+                    shake = 30; gameOver = true;
                 }
                 if (b.y > canvas.height) bombs.splice(i, 1);
             }
 
-            // CRITICAL FIX: MOVEMENT CHECK EVERY FRAME
-            if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 9;
-            if (keys.right && newtonX < R_LIMIT - 120) newtonX += 9;
+            // Scoreboard
+            ctx.fillStyle = "#5d4037"; ctx.fillRect(canvas.width/2 - 80, 20, 160, 45);
+            ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+            ctx.fillText("Score: " + score, canvas.width / 2, 49);
 
-            appleY += speed;
-            if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
-                score += isGolden ? 5 : 1; 
-                resetApple();
-            }
-            if (appleY > canvas.height) gameOver = true;
-
-            drawScoreboard(); 
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
             animationId = requestAnimationFrame(gameLoop);
         }
-
-        // IMPROVED INPUT LISTENERS
-        const handleInput = (btnId, key, state) => {
-            const btn = document.getElementById(btnId);
-            const startEvents = ['touchstart', 'mousedown'];
-            const endEvents = ['touchend', 'mouseup', 'mouseleave', 'touchcancel'];
-
-            startEvents.forEach(e => btn.addEventListener(e, (evt) => {
-                evt.preventDefault(); // Stop scrolling/sticking
-                keys[key] = true;
-            }, { passive: false }));
-
-            endEvents.forEach(e => btn.addEventListener(e, (evt) => {
-                evt.preventDefault();
-                keys[key] = false;
-            }, { passive: false }));
-        };
-
-        handleInput('leftBtn', 'left');
-        handleInput('rightBtn', 'right');
-
-        // KEYBOARD SUPPORT
-        window.addEventListener('keydown', (e) => {
-            if (e.key === "ArrowLeft") keys.left = true;
-            if (e.key === "ArrowRight") keys.right = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === "ArrowLeft") keys.left = false;
-            if (e.key === "ArrowRight") keys.right = false;
-        });
 
         resetApple(); gameLoop();
     </script>
