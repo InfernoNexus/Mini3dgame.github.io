@@ -56,7 +56,7 @@
             <button id="leftBtn" oncontextmenu="return false;">◀</button>
             <button id="rightBtn" oncontextmenu="return false;">▶</button>
         </div>
-        <button class="restart-btn" onclick="restartGame()">Restart Game</button>
+        <button id="reset" class="restart-btn" onclick="restartGame()">Restart Game</button>
     </div>
 
     <script>
@@ -72,12 +72,17 @@
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
         let bgOffset = 0; let shake = 0;
+        
+        // REACTION VARIABLES
+        let newtonScaleY = 1; 
+        let bounceTimer = 0;
+        let animationId; // To track the loop
+
         let particles = []; let bombs = []; let ambientLeaves = [];
         const keys = { left: false, right: false };
 
         const L_LIMIT = 60; const R_LIMIT = 560;
 
-        // Initialize Ambient Leaves
         for(let i=0; i<15; i++) {
             ambientLeaves.push({
                 x: Math.random() * 620, y: Math.random() * 620,
@@ -108,18 +113,30 @@
 
         function drawNewton(){
             ctx.save();
-            // Momentum Tilt logic
+            
+            // Momentum Tilt
             if(keys.left) tilt = Math.max(tilt - 0.02, -0.1);
             else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
             else tilt *= 0.9;
 
-            ctx.translate(newtonX + 85, 467);
+            // Reaction: Squash & Stretch logic
+            if (bounceTimer > 0) {
+                newtonScaleY = 1 + Math.sin(bounceTimer * 0.5) * 0.15;
+                bounceTimer--;
+            } else {
+                newtonScaleY = 1;
+            }
+
+            ctx.translate(newtonX + 85, 560); // Base of character
             ctx.rotate(tilt);
+            ctx.scale(1, newtonScaleY); 
+            
             // Shadow
             ctx.fillStyle="rgba(0,0,0,0.2)";
-            ctx.beginPath(); ctx.ellipse(0, 95, 55, 10, 0, 0, Math.PI*2); ctx.fill();
-            // Image
-            ctx.drawImage(newtonImg, -85, -97, 170, 195);
+            ctx.beginPath(); ctx.ellipse(0, 0, 55, 10, 0, 0, Math.PI*2); ctx.fill();
+            
+            // Image (drawn relative to the base)
+            ctx.drawImage(newtonImg, -85, -190, 170, 195);
             ctx.restore();
         }
 
@@ -129,22 +146,25 @@
         }
 
         function restartGame(){
-            score = 0; speed = 5; gameOver = false; bombs = []; particles = []; shake = 0;
-            resetApple(); gameLoop();
+            // Clear the old loop to prevent "speed up" glitch
+            cancelAnimationFrame(animationId);
+            score = 0; speed = 5; gameOver = false; 
+            bombs = []; particles = []; shake = 0; bounceTimer = 0;
+            resetApple();
+            gameLoop();
         }
 
         function gameLoop() {
             if (gameOver) {
+                // Draw one final frame then stop
                 ctx.setTransform(1,0,0,1,0,0);
-                drawBackground();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
                 ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
                 ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
-                return;
+                return; // Ends loop
             }
 
-            // Screen Shake Logic
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) {
                 ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
@@ -174,7 +194,7 @@
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
                 if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    shake = 15; // Trigger shake
+                    shake = 20; 
                     gameOver = true;
                 }
                 if (b.y > canvas.height) bombs.splice(i, 1);
@@ -185,16 +205,18 @@
 
             appleY += speed;
             if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
-                score += isGolden ? 5 : 1; resetApple();
+                score += isGolden ? 5 : 1; 
+                bounceTimer = 15; // NEWTON REACTS
+                resetApple();
             }
             if (appleY > canvas.height) gameOver = true;
 
             drawScoreboard(); 
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
-            requestAnimationFrame(gameLoop);
+            
+            animationId = requestAnimationFrame(gameLoop);
         }
 
-        // Controls
         const l = document.getElementById("leftBtn"), r = document.getElementById("rightBtn");
         l.onpointerdown = (e) => { e.preventDefault(); keys.left = true; };
         l.onpointerup = l.onpointerout = (e) => { e.preventDefault(); keys.left = false; };
