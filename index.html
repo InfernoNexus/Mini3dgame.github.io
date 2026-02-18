@@ -5,17 +5,25 @@
     <title>Newton & Gravity</title>
     
     <style>
-        /* General Layout */
-        body { margin: 0; text-align: center; font-family: Arial; background: #b0e2ff; overflow: hidden; }
+        /* ALLOW REFRESH: Enabled vertical scroll for the browser loading bar */
+        body { 
+            margin: 0; 
+            text-align: center; 
+            font-family: Arial; 
+            background: #b0e2ff; 
+            overflow-x: hidden; 
+            overflow-y: auto; 
+            overscroll-behavior-y: contain; 
+        }
         
         canvas { 
             display: block; 
-            margin: auto; 
-            border: none; 
-            border-radius: 0; 
+            margin: 10px auto 0 auto; 
             width: 95%; 
             max-width: 520px; 
             background: transparent; 
+            /* ALLOW REFRESH: Let the browser see vertical swipes */
+            touch-action: pan-y; 
         }
 
         #controls { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
@@ -46,6 +54,7 @@
 </head>
 
 <body>
+    <div style="height: 5px;"></div> 
     <h2>🍎 Newton & Gravity 🍎</h2>
     
     <canvas id="game" width="620" height="620"></canvas>
@@ -76,31 +85,31 @@
         const L_LIMIT = 60; 
         const R_LIMIT = 560;
 
-        // --- NEW SCOREBOARD FUNCTION ---
+        // --- UPDATED SCOREBOARD: MOVED UP TO TOUCH THE FRAME ---
         function drawScoreboard() {
             const rectWidth = 160;
-            const rectHeight = 50;
+            const rectHeight = 45;
             const x = (canvas.width / 2) - (rectWidth / 2);
-            const y = 80; // Distance from the top emerald frame
+            const y = 20; // HIGHER: Now touches the top edge of the frame
+
+            // Hanging Ropes/Links
+            ctx.fillStyle = "#3e2723";
+            ctx.fillRect(x + 30, y - 20, 4, 20);
+            ctx.fillRect(x + rectWidth - 34, y - 20, 4, 20);
 
             // Wooden Frame (Outer)
             ctx.fillStyle = "#5d4037"; 
             ctx.fillRect(x, y, rectWidth, rectHeight);
             
-            // Wooden Inner Grain Effect
+            // Wooden Inner
             ctx.fillStyle = "#795548";
-            ctx.fillRect(x + 5, y + 5, rectWidth - 10, rectHeight - 10);
+            ctx.fillRect(x + 4, y + 4, rectWidth - 8, rectHeight - 8);
 
-            // Text
+            // Score Text
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 22px Arial";
+            ctx.font = "bold 20px Arial";
             ctx.textAlign = "center";
-            ctx.fillText("Score: " + score, canvas.width / 2, y + 32);
-            
-            // Subtle Shine
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x + 2, y + 2, rectWidth - 4, rectHeight - 4);
+            ctx.fillText("Score: " + score, canvas.width / 2, y + 29);
         }
 
         class Particle {
@@ -136,12 +145,15 @@
             if (e.key === "ArrowRight" || e.key === "d") keys.right = false;
         });
 
+        // Use pointer events to keep control responsive while allowing swipe
         const leftBtn = document.getElementById("leftBtn");
         const rightBtn = document.getElementById("rightBtn");
-        leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.left = true; });
-        leftBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.left = false; });
-        rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); keys.right = true; });
-        rightBtn.addEventListener("touchend", (e) => { e.preventDefault(); keys.right = false; });
+        leftBtn.onpointerdown = () => { keys.left = true; };
+        leftBtn.onpointerup = () => { keys.left = false; };
+        leftBtn.onpointerout = () => { keys.left = false; };
+        rightBtn.onpointerdown = () => { keys.right = true; };
+        rightBtn.onpointerup = () => { keys.right = false; };
+        rightBtn.onpointerout = () => { keys.right = false; };
 
         function drawBackground() {
             bgOffset = (canvas.width / 2 - newtonX) * 0.15;
@@ -158,12 +170,12 @@
 
         function drawNewton(){
             ctx.fillStyle="rgba(0,0,0,0.25)";
-            ctx.beginPath(); ctx.ellipse(newtonX+85,565,55,10,0,0,Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(newtonX+85, 565, 55, 10, 0, 0, Math.PI*2); ctx.fill();
             ctx.drawImage(newtonImg, newtonX, 370, 170, 195); 
         }
 
         function resetApple(){
-            appleY = 130; // Starts below the scoreboard
+            appleY = 80; // Reset just below the new scoreboard position
             appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
             isGolden = Math.random() < 0.2;
         }
@@ -198,7 +210,10 @@
             for (let i = bombs.length - 1; i >= 0; i--) {
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
-                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) gameOver = true;
+                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
+                    createExplosion(b.x + b.size/2, b.y + b.size/2);
+                    gameOver = true;
+                }
                 if (b.y > canvas.height) bombs.splice(i, 1);
             }
 
@@ -212,7 +227,8 @@
             }
             if (appleY > canvas.height) gameOver = true;
 
-            drawScoreboard(); // Draw the new scoreboard
+            drawScoreboard(); 
+            // Frame is drawn last so it stays on top of Newton and the Apple
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
 
             requestAnimationFrame(gameLoop);
