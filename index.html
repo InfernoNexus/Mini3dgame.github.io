@@ -216,10 +216,9 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // INCREASED PARALLAX EFFECT (0.25 multiplier)
-            // WIDENED BACKGROUND DRAW (canvas.width + 300) to support larger movement range
+            // BACKGROUND WIDENED TO 1400px (canvas.width + 400) for better parallax buffer
             let bgOffset = -(newtonX * 0.25); 
-            ctx.drawImage(backgroundImg, bgOffset - 50, -22, canvas.width + 300, canvas.height + 44);
+            ctx.drawImage(backgroundImg, bgOffset - 100, -22, canvas.width + 400, canvas.height + 44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
@@ -229,7 +228,8 @@
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 27.5, appleY, 55, 65);
+            // OBJECTS: 85 width (Larger), 70 height (Original)
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 42.5, appleY, 85, 70);
 
             if (appleY > 320 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
@@ -241,13 +241,14 @@
             }
 
             if (Math.random() < 0.012 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-55), y: -100, s: 4 + Math.random()*2 });
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-85), y: -100, s: 4 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 55, 65);
-                if (bombs[i].x < newtonX + 260 && bombs[i].x + 55 > newtonX + 20 && bombs[i].y > 320 && bombs[i].y < 480 && deathTimer === 0) {
+                // BOMB: 85 width, 70 height
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 85, 70);
+                if (bombs[i].x < newtonX + 260 && bombs[i].x + 85 > newtonX + 20 && bombs[i].y > 320 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<25; j++) particles.push(new Particle(bombs[i].x, bombs[i].y));
                     shake = 35;
                     deathTimer = 40;
