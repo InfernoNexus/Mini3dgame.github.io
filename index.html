@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Newton Forest Adventure - Zoomed Out</title>
+    <title>Newton and Gravity</title>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
@@ -32,14 +32,25 @@
 
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-image: url('background.png'); background-position: center;
-            background-repeat: no-repeat; background-size: cover;
-            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: #1a3c1a;
+            /* Using a background image if available, otherwise solid color */
+            background-image: url('background.png'); 
+            background-position: center;
+            background-repeat: no-repeat; 
+            background-size: cover;
+            z-index: 1000; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
         }
 
         .forest-title {
-            font-size: 55px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); margin: 0;
+            font-size: 55px; 
+            color: #4CAF50;
+            line-height: 1.1;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
+            margin: 0;
         }
 
         #mobile-ui {
@@ -79,6 +90,7 @@
             border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32);
             box-shadow: 0 6px 0 #1B5E20; outline: none;
+            transition: transform 0.1s;
         }
 
         #reset-lane { height: 70px; display: flex; justify-content: center; align-items: center; }
@@ -92,9 +104,9 @@
 
 <body>
     <div id="startOverlay">
-        <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
+        <h1 class="forest-title">NEWTON<br><span style="color: #fff; font-size: 30px;">and</span><br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
-        <button id="playBtn" class="main-btn">PLAY START</button>
+        <button id="playBtn" class="main-btn">PLAY</button>
     </div>
 
     <canvas id="game" width="1000" height="500"></canvas>
@@ -114,6 +126,7 @@
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
+        // Asset Setup
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -129,9 +142,9 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // ZOOMED OUT SCALE (0.7x multiplier for everything)
-        const nW = 196; const nH = 112; // Newton (Originally 280x160)
-        const iW = 52;  const iH = 38;  // Items (Originally 75x55)
+        // Scale (Zoomed Out 0.7x)
+        const nW = 196; const nH = 112; 
+        const iW = 52;  const iH = 38;  
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.0; 
@@ -141,14 +154,18 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
+        // Corrected Start Game Trigger
         function startGame() {
             gameState = 'PLAYING';
             isPaused = false;
             document.getElementById('startOverlay').style.display = 'none';
             document.getElementById('reset').style.visibility = 'hidden';
             document.getElementById('pauseBtn').innerText = "PAUSE";
+            
+            // Audio check for mobile browsers
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(() => {});
+            bgMusic.play().catch(() => { console.log("Audio waiting for user interaction"); });
+            
             score = 0; speed = 5.0; gameOver = false; deathTimer = 0;
             newtonX = 400; bombs = []; particles = [];
             resetApple();
@@ -227,8 +244,8 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // ZOOMED OUT BACKGROUND
-            const bgZoomWidth = canvas.width * 2.2; // Extra width for zoom-out feel
+            // Zoomed Out Background
+            const bgZoomWidth = canvas.width * 2.2;
             const bgZoomHeight = canvas.height * 2.0;
             let bgOffset = -(newtonX * 0.5) - 500; 
             ctx.drawImage(backgroundImg, bgOffset, -250, bgZoomWidth, bgZoomHeight);
@@ -238,14 +255,11 @@
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 12;
             }
             
-            // DRAW SMALLER NEWTON
             ctx.drawImage(newtonImg, newtonX, 500 - nH - 10, nW, nH);
 
             appleY += speed;
-            // DRAW SMALLER APPLE
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            // Catching logic for zoomed out scale
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 40) && appleX > newtonX + 25 && appleX < newtonX + (nW - 25) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
@@ -266,7 +280,6 @@
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
                 
-                // Tight collision for smaller bomb
                 if (bCX > newtonX + 35 && bCX < newtonX + (nW - 35) &&
                     bCY > (500 - nH - 5) && bCY < 490 && deathTimer === 0) {
                     for(let j=0; j<15; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
@@ -282,26 +295,36 @@
             requestAnimationFrame(gameLoop);
         }
 
-        const handleMainBtn = (id, callback) => {
+        // Global function for buttons
+        const setupBtn = (id, callback) => {
             const el = document.getElementById(id);
-            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-            const release = () => el.classList.remove('pressed');
-            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
-            el.addEventListener('mousedown', press); el.addEventListener('mouseup', release);
+            const start = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
+            const stop = () => el.classList.remove('pressed');
+            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
+            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
         };
 
-        const handleMove = (id, key, animClass) => {
+        const setupMove = (id, key, animClass) => {
             const el = document.getElementById(id);
             const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
             const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
-            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
             el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
+            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
         };
 
-        handleMainBtn('playBtn', startGame);
-        handleMainBtn('reset', startGame);
-        handleMove('leftBtn', 'left', 'pressed-red');
-        handleMove('rightBtn', 'right', 'pressed-red');
+        // Initialize listeners
+        setupBtn('playBtn', startGame);
+        setupBtn('reset', startGame);
+        setupMove('leftBtn', 'left', 'pressed-red');
+        setupMove('rightBtn', 'right', 'pressed-red');
 
         const pBtn = document.getElementById('pauseBtn');
-        const pPress = (e) => { e.preventDefault(); pBtn.classList.
+        const pClick = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
+        pBtn.addEventListener('mousedown', pClick);
+        pBtn.addEventListener('mouseup', () => pBtn.classList.remove('pressed-orange'));
+        pBtn.addEventListener('touchstart', pClick);
+        pBtn.addEventListener('touchend', () => pBtn.classList.remove('pressed-orange'));
+
+    </script>
+</body>
+</html>
