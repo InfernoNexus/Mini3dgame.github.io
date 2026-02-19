@@ -227,7 +227,7 @@
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-                if (keys.right && newtonX < R_LIMIT - 180) newtonX += 15;
+                if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
             }
             
             // NEWTON WIDENED: Changed width from 140 to 200 to stretch him horizontally
@@ -236,7 +236,7 @@
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 30, appleY - 30, 60, 60);
 
-            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 200 && deathTimer === 0) {
+            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
                 resetApple();
@@ -252,7 +252,7 @@
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 60, 60);
-                if (bombs[i].x < newtonX + 160 && bombs[i].x + 60 > newtonX + 40 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
+                if (bombs[i].x < newtonX + 240 && bombs[i].x + 60 > newtonX + 40 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<35; j++) particles.push(new Particle(bombs[i].x+30, bombs[i].y+30));
                     shake = 35;
                     deathTimer = 40;
