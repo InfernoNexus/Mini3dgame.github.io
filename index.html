@@ -14,6 +14,7 @@
         
         canvas { display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; background: transparent; }
 
+        /* Added relative position to ensure button clicks inside are captured correctly */
         #startOverlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); z-index: 100;
@@ -33,8 +34,10 @@
             background: linear-gradient(#4CAF50, #2E7D32);
             box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 30px;
             outline: none; -webkit-tap-highlight-color: transparent;
+            position: relative; /* Added for better tap response */
         }
 
+        /* Animation for the Play button when pressed */
         .main-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #1B5E20; }
 
         #controls { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
@@ -185,14 +188,12 @@
             if (appleY > 420 && appleY < 520 && appleX > newtonX && appleX < newtonX + 170 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); // No game over for golden apple
+                if (isGolden) resetApple(); 
                 else { deathTimer = 30; shake = 15; }
             }
 
-            // Fair Bomb Spawning
-            if (Math.random() < 0.009 && deathTimer === 0) { // Reduced probability
+            if (Math.random() < 0.009 && deathTimer === 0) { 
                 let bx = L_LIMIT + Math.random() * (R_LIMIT-L_LIMIT-45);
-                // Ensure bomb isn't blocking the apple path entirely
                 if (Math.abs(bx - appleX) < 100) bx += 120; 
                 if (bx > R_LIMIT - 45) bx -= 240;
                 bombs.push({ x: bx, y: -50, s: 5 + Math.random()*2 });
@@ -215,10 +216,14 @@
         }
 
         // --- BUTTON FIXES ---
+        // Changed mousedown to 'click' for the play button to ensure better compatibility with the overlay removal
         const setupBtn = (id, callback) => {
             const el = document.getElementById(id);
-            el.addEventListener('mousedown', callback);
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); callback(); });
+            el.addEventListener('click', callback);
+            el.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                callback(); 
+            }, {passive: false});
         };
 
         setupBtn('playBtn', startGame);
