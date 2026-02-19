@@ -130,6 +130,10 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
+        // NEW SCALED SIZES (0.8x multiplier)
+        const nW = 224; const nH = 128; // Newton: 280*0.8, 160*0.8
+        const iW = 60; const iH = 44;   // Item: 75*0.8, 55*0.8
+
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
         let gameOver = false; let isGolden = false;
@@ -179,12 +183,12 @@
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 8 + 4;
-                this.speedX = (Math.random() - 0.5) * 15;
-                this.speedY = (Math.random() - 0.5) * 15;
+                this.size = Math.random() * 6 + 3;
+                this.speedX = (Math.random() - 0.5) * 12;
+                this.speedY = (Math.random() - 0.5) * 12;
                 this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.04; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.05; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "#ffaa00";
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
@@ -229,16 +233,18 @@
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-                if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
+                if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
             
-            ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
+            // DRAW SCALED NEWTON
+            ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
 
             appleY += speed;
-            // UPDATED SIZE: 75 width (larger), 55 height (smaller)
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 37.5, appleY, 75, 55);
+            // DRAW SCALED APPLE
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            if (appleY > 320 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
+            // Catch Logic Adjusted for smaller Newton
+            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 40) && appleX > newtonX + 30 && appleX < newtonX + (nW - 30) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
                 resetApple();
@@ -247,17 +253,22 @@
                 else { deathTimer = 30; }
             }
 
-            if (Math.random() < 0.012 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-75), y: -100, s: 4 + Math.random()*2 });
+            if (Math.random() < 0.007 && deathTimer === 0) { 
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                // BOMB SIZE: Matches new wide/short apple dimensions
-                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 75, 55);
-                if (bombs[i].x < newtonX + 260 && bombs[i].x + 75 > newtonX + 20 && bombs[i].y > 320 && bombs[i].y < 480 && deathTimer === 0) {
-                    for(let j=0; j<25; j++) particles.push(new Particle(bombs[i].x, bombs[i].y));
-                    shake = 35;
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, iW, iH);
+                
+                // REFINED BOMB HITBOX for smaller size
+                const bCX = bombs[i].x + (iW/2);
+                const bCY = bombs[i].y + (iH/2);
+                
+                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) &&
+                    bCY > (500 - nH - 10) && bCY < 480 && deathTimer === 0) {
+                    for(let j=0; j<20; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
+                    shake = 30;
                     deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
