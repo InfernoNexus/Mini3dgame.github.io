@@ -8,11 +8,34 @@
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
 
         body { 
-            margin: 0; text-align: center; font-family: 'Segoe UI', Arial, sans-serif; background: #b0e2ff; 
-            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
-        }
-        
-        canvas { display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; background: transparent; }
+    margin: 0; 
+    text-align: center; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    /* REPLACE THE BLUE WITH THIS FOREST GRADIENT */
+    background: linear-gradient(to bottom, #2d5a27 0%, #1b3d1a 100%);
+    /* OR USE YOUR BACKGROUND IMAGE BLURRED (Uncomment below to use) */
+    /* background: url('background.png') no-repeat center center fixed; background-size: cover; filter: brightness(0.6); */
+    
+    overflow: hidden; 
+    touch-action: none; 
+    user-select: none; 
+    -webkit-user-select: none;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Add this to make the game area feel like it's "glowing" against the dark background */
+canvas { 
+    display: block; 
+    margin: 0 auto; 
+    width: 95%; 
+    max-width: 520px; 
+    background: transparent; 
+    box-shadow: 0 0 40px rgba(0,0,0,0.5); 
+    border-radius: 12px;
+}
 
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
