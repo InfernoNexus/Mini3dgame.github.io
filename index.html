@@ -12,7 +12,6 @@
             overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         
-        /* The Canvas Container */
         #game-container {
             position: relative;
             display: inline-block;
@@ -24,20 +23,22 @@
             background: transparent; 
         }
 
-        /* FIXED OVERLAY: Transparent & Centered on the Canvas */
+        /* HOME SCREEN - Now with background.png */
         #startOverlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0); /* Completely transparent */
+            background: url('background.png') no-repeat center center;
+            background-size: cover;
             z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 5px; /* Matches canvas slightly */
         }
 
         .forest-title {
             font-family: 'Luckiest Guy', cursive;
             font-size: 50px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 15px rgba(255,255,255,0.5); 
-            margin: 0; padding-top: 50px;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
+            margin: 0;
         }
 
         .main-btn {
@@ -51,7 +52,7 @@
 
         .main-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #1B5E20; }
 
-        #controls { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+        #controls { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
 
         #leftBtn, #rightBtn {
             width: 80px; height: 80px; border-radius: 50%;
@@ -71,7 +72,7 @@
     <div id="game-container">
         <div id="startOverlay">
             <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
-            <div id="homeBestScore" style="color: #fff; font-size: 22px; margin-top: 10px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000;">BEST: 0</div>
+            <div id="homeBestScore" style="color: #fff; font-size: 24px; margin-top: 15px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000; background: rgba(0,0,0,0.3); padding: 5px 20px; border-radius: 20px;">BEST: 0</div>
             <button id="playBtn" class="main-btn">PLAY START</button>
         </div>
         <canvas id="game" width="620" height="620"></canvas>
@@ -132,9 +133,8 @@
 
         function drawWoodScore() {
             ctx.save();
-            const bx = canvas.width/2 - 90, by = 25, bw = 180, bh = 60;
-            ctx.fillStyle = "#5d4037"; ctx.fillRect(bx, by, bw, bh);
-            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 3; ctx.strokeRect(bx, by, bw, bh);
+            ctx.fillStyle = "#5d4037"; ctx.fillRect(canvas.width/2-90, 25, 180, 60);
+            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 3; ctx.strokeRect(canvas.width/2-90, 25, 180, 60);
             ctx.fillStyle = "#fff"; ctx.textAlign = "center";
             ctx.font = "bold 20px Arial"; ctx.fillText("SCORE: " + score, canvas.width/2, 50);
             ctx.font = "bold 12px Arial"; ctx.fillText("BEST: " + highScore, canvas.width/2, 75);
@@ -157,17 +157,12 @@
         }
 
         function gameLoop() {
-            // Draw background even on HOME screen
+            if (gameState === 'HOME') return;
+
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.8; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(backgroundImg, -80, 0, canvas.width + 160, canvas.height);
-
-            if (gameState === 'HOME') {
-                ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
-                requestAnimationFrame(gameLoop);
-                return;
-            }
 
             if (deathTimer > 0) {
                 deathTimer--;
@@ -231,7 +226,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- BUTTON HANDLING ---
         const setupBtn = (id, callback) => {
             const el = document.getElementById(id);
             el.addEventListener('click', callback);
@@ -249,8 +243,6 @@
             el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop); el.addEventListener('mouseleave', stop);
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
-
-        gameLoop();
     </script>
 </body>
 </html>
