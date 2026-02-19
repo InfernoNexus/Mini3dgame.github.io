@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Newton and Gravity</title>
+    <title>Newton Forest Adventure</title>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
@@ -28,29 +28,19 @@
             height: auto;
             flex-grow: 1; 
             background: #1a3c1a; 
+            image-rendering: auto;
         }
 
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #1a3c1a;
-            /* Using a background image if available, otherwise solid color */
-            background-image: url('background.png'); 
-            background-position: center;
-            background-repeat: no-repeat; 
-            background-size: cover;
-            z-index: 1000; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
+            background-image: url('background.png'); background-position: center;
+            background-repeat: no-repeat; background-size: cover;
+            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         .forest-title {
-            font-size: 55px; 
-            color: #4CAF50;
-            line-height: 1.1;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
-            margin: 0;
+            font-size: 55px; color: #4CAF50;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); margin: 0;
         }
 
         #mobile-ui {
@@ -90,7 +80,6 @@
             border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32);
             box-shadow: 0 6px 0 #1B5E20; outline: none;
-            transition: transform 0.1s;
         }
 
         #reset-lane { height: 70px; display: flex; justify-content: center; align-items: center; }
@@ -104,9 +93,9 @@
 
 <body>
     <div id="startOverlay">
-        <h1 class="forest-title">NEWTON<br><span style="color: #fff; font-size: 30px;">and</span><br><span style="color: #a5d6a7;">GRAVITY</span></h1>
+        <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
-        <button id="playBtn" class="main-btn">PLAY</button>
+        <button id="playBtn" class="main-btn">PLAY START</button>
     </div>
 
     <canvas id="game" width="1000" height="500"></canvas>
@@ -126,7 +115,6 @@
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
-        // Asset Setup
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -142,32 +130,28 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // Scale (Zoomed Out 0.7x)
-        const nW = 196; const nH = 112; 
-        const iW = 52;  const iH = 38;  
+        // NEW 0.9x SCALED SIZES (Goldilocks Zone)
+        const nW = 252; const nH = 144; // Newton
+        const iW = 68;  const iH = 50;  // Items
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
-        let score = 0; let speed = 5.0; 
+        let score = 0; let speed = 5.5; 
         let gameOver = false; let isGolden = false;
         let shake = 0; let deathTimer = 0;
         let bombs = []; let particles = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
-        // Corrected Start Game Trigger
         function startGame() {
             gameState = 'PLAYING';
             isPaused = false;
             document.getElementById('startOverlay').style.display = 'none';
             document.getElementById('reset').style.visibility = 'hidden';
             document.getElementById('pauseBtn').innerText = "PAUSE";
-            
-            // Audio check for mobile browsers
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(() => { console.log("Audio waiting for user interaction"); });
-            
-            score = 0; speed = 5.0; gameOver = false; deathTimer = 0;
-            newtonX = 400; bombs = []; particles = [];
+            bgMusic.play().catch(() => {});
+            score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
+            newtonX = 425; bombs = []; particles = [];
             resetApple();
             gameLoop();
         }
@@ -180,31 +164,31 @@
         }
 
         function resetApple() {
-            appleY = -80;
-            appleX = L_LIMIT + 50 + Math.random() * (R_LIMIT - L_LIMIT - 100);
+            appleY = -100;
+            appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
             isGolden = Math.random() < 0.15;
         }
 
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-80, 10, 160, 40);
-            ctx.strokeStyle = "#4e2c0e"; ctx.lineWidth = 3;
-            ctx.strokeRect(canvas.width/2-80, 10, 160, 40);
-            ctx.fillStyle = "#fff"; ctx.font = "20px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, canvas.width/2, 37);
+            ctx.fillRect(canvas.width/2-100, 15, 200, 45);
+            ctx.strokeStyle = "#4e2c0e"; ctx.lineWidth = 4;
+            ctx.strokeRect(canvas.width/2-100, 15, 200, 45);
+            ctx.fillStyle = "#fff"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, canvas.width/2, 47);
             ctx.restore();
         }
 
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 5 + 2;
-                this.speedX = (Math.random() - 0.5) * 10;
-                this.speedY = (Math.random() - 0.5) * 10;
+                this.size = Math.random() * 7 + 3;
+                this.speedX = (Math.random() - 0.5) * 13;
+                this.speedY = (Math.random() - 0.5) * 13;
                 this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.05; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.045; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "#ffaa00";
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
@@ -230,8 +214,8 @@
                 
                 ctx.save();
                 ctx.translate(canvas.width/2, 280);
-                ctx.scale(1.5, 1); 
-                ctx.fillStyle = "white"; ctx.font = "60px Luckiest Guy"; ctx.textAlign = "center";
+                ctx.scale(1.8, 1); 
+                ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", 0, 0);
                 ctx.restore();
 
@@ -240,37 +224,35 @@
             }
 
             ctx.setTransform(1,0,0,1,0,0);
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.85; }
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Zoomed Out Background
-            const bgZoomWidth = canvas.width * 2.2;
-            const bgZoomHeight = canvas.height * 2.0;
-            let bgOffset = -(newtonX * 0.5) - 500; 
-            ctx.drawImage(backgroundImg, bgOffset, -250, bgZoomWidth, bgZoomHeight);
+            let bgOffset = -(newtonX * 0.28); 
+            ctx.drawImage(backgroundImg, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
 
             if (deathTimer === 0) {
-                if (keys.left && newtonX > L_LIMIT) newtonX -= 12;
-                if (keys.right && newtonX < R_LIMIT - nW) newtonX += 12;
+                if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
+                if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
             
-            ctx.drawImage(newtonImg, newtonX, 500 - nH - 10, nW, nH);
+            ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
 
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 40) && appleX > newtonX + 25 && appleX < newtonX + (nW - 25) && deathTimer === 0) {
+            // Catching logic for 0.9x scale
+            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 35 && appleX < newtonX + (nW - 35) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
-                speed += 0.07;
+                speed += 0.08;
                 resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
                 if (isGolden) resetApple(); 
                 else { deathTimer = 30; }
             }
 
-            if (Math.random() < 0.008 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -80, s: 4 + Math.random()*2 });
+            if (Math.random() < 0.007 && deathTimer === 0) { 
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
@@ -280,10 +262,10 @@
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
                 
-                if (bCX > newtonX + 35 && bCX < newtonX + (nW - 35) &&
-                    bCY > (500 - nH - 5) && bCY < 490 && deathTimer === 0) {
-                    for(let j=0; j<15; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
-                    shake = 25;
+                if (bCX > newtonX + 45 && bCX < newtonX + (nW - 45) &&
+                    bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
+                    for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
+                    shake = 32;
                     deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
@@ -291,40 +273,36 @@
 
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
             drawWoodScore();
-            ctx.drawImage(borderImg, -10, -10, canvas.width+20, canvas.height+20);
+            ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
             requestAnimationFrame(gameLoop);
         }
 
-        // Global function for buttons
-        const setupBtn = (id, callback) => {
+        const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-            const stop = () => el.classList.remove('pressed');
-            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
-            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
+            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
+            const release = () => el.classList.remove('pressed');
+            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
+            el.addEventListener('mousedown', press); el.addEventListener('mouseup', release);
         };
 
-        const setupMove = (id, key, animClass) => {
+        const handleMove = (id, key, animClass) => {
             const el = document.getElementById(id);
             const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
             const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
-            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
             el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
+            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
         };
 
-        // Initialize listeners
-        setupBtn('playBtn', startGame);
-        setupBtn('reset', startGame);
-        setupMove('leftBtn', 'left', 'pressed-red');
-        setupMove('rightBtn', 'right', 'pressed-red');
+        handleMainBtn('playBtn', startGame);
+        handleMainBtn('reset', startGame);
+        handleMove('leftBtn', 'left', 'pressed-red');
+        handleMove('rightBtn', 'right', 'pressed-red');
 
         const pBtn = document.getElementById('pauseBtn');
-        const pClick = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
-        pBtn.addEventListener('mousedown', pClick);
-        pBtn.addEventListener('mouseup', () => pBtn.classList.remove('pressed-orange'));
-        pBtn.addEventListener('touchstart', pClick);
-        pBtn.addEventListener('touchend', () => pBtn.classList.remove('pressed-orange'));
-
+        const pPress = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
+        const pRelease = () => pBtn.classList.remove('pressed-orange');
+        pBtn.addEventListener('touchstart', pPress); pBtn.addEventListener('touchend', pRelease);
+        pBtn.addEventListener('mousedown', pPress); pBtn.addEventListener('mouseup', pRelease);
     </script>
 </body>
 </html>
