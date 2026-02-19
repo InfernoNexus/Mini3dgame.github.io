@@ -221,7 +221,9 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(backgroundImg, -22, -22, canvas.width+44, canvas.height+44);
+            
+            let bgOffset = -(newtonX * 0.1); 
+            ctx.drawImage(backgroundImg, bgOffset - 50, -22, canvas.width + 100, canvas.height + 44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
@@ -231,7 +233,7 @@
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            // APPLE WIDTH: 90 (+30 from original). Centered by offset -45.
+            // APPLE HEIGHT: Updated to 60px to match bombs
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 45, appleY - 30, 90, 60);
 
             if (appleY > 340 && appleY < 460 && appleX > newtonX - 15 && appleX < newtonX + 295 && deathTimer === 0) {
@@ -249,7 +251,6 @@
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                // BOMB WIDTH: 90 (+30 from original). Offset -15 to center.
                 ctx.drawImage(bombImg, bombs[i].x - 15, bombs[i].y, 90, 60);
                 if (bombs[i].x < newtonX + 240 && bombs[i].x + 60 > newtonX + 40 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<35; j++) particles.push(new Particle(bombs[i].x+30, bombs[i].y+30));
