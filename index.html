@@ -130,9 +130,9 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // NEW 0.9x SCALED SIZES (Goldilocks Zone)
-        const nW = 252; const nH = 144; // Newton
-        const iW = 68;  const iH = 50;  // Items
+        // 0.9x SCALED SIZES 
+        const nW = 252; const nH = 144; 
+        const iW = 68;  const iH = 50;  
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
@@ -228,8 +228,13 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let bgOffset = -(newtonX * 0.28); 
-            ctx.drawImage(backgroundImg, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
+            // ZOOMED OUT BACKGROUND LOGIC
+            // Drawing the image at 1800px width (1.8x zoom out)
+            const bgZoomWidth = canvas.width * 1.8;
+            const bgZoomHeight = canvas.height * 1.8;
+            // Center the "zoomed out" image and apply parallax
+            let bgOffset = -(newtonX * 0.4) - 350; 
+            ctx.drawImage(backgroundImg, bgOffset, -180, bgZoomWidth, bgZoomHeight);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
@@ -241,7 +246,6 @@
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            // Catching logic for 0.9x scale
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 35 && appleX < newtonX + (nW - 35) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
