@@ -8,39 +8,23 @@
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
 
         body { 
-    margin: 0; 
-    text-align: center; 
-    font-family: 'Segoe UI', Arial, sans-serif; 
-    /* REPLACE THE BLUE WITH THIS FOREST GRADIENT */
-    background: linear-gradient(to bottom, #2d5a27 0%, #1b3d1a 100%);
-    /* OR USE YOUR BACKGROUND IMAGE BLURRED (Uncomment below to use) */
-    /* background: url('background.png') no-repeat center center fixed; background-size: cover; filter: brightness(0.6); */
-    
-    overflow: hidden; 
-    touch-action: none; 
-    user-select: none; 
-    -webkit-user-select: none;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-/* Add this to make the game area feel like it's "glowing" against the dark background */
-canvas { 
-    display: block; 
-    margin: 0 auto; 
-    width: 95%; 
-    max-width: 520px; 
-    background: transparent; 
-    box-shadow: 0 0 40px rgba(0,0,0,0.5); 
-    border-radius: 12px;
-}
+            margin: 0; text-align: center; font-family: 'Segoe UI', Arial, sans-serif; 
+            /* FIXED: Replaced ugly blue with a deep forest gradient */
+            background: linear-gradient(to bottom, #1a3c1a, #0d1f0d); 
+            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+            height: 100vh;
+        }
+        
+        canvas { 
+            display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; 
+            background: transparent; border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
 
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-image: url('background.png'); background-position: center;
-            background-repeat: no-repeat; background-size: cover; background-color: #b0e2ff;
+            background-repeat: no-repeat; background-size: cover; background-color: #1a3c1a;
             z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
@@ -50,7 +34,6 @@ canvas {
             text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); margin: 0;
         }
 
-        /* MAIN BUTTON STYLE */
         .main-btn {
             font-family: 'Luckiest Guy', cursive;
             font-size: 32px; padding: 18px 50px; border-radius: 50px;
@@ -60,27 +43,41 @@ canvas {
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
-        /* ROW 1: CONTROLS */
+        /* ROW 1: CONTROLS MOVED TO EDGES */
         #control-lane { 
-            display: flex; justify-content: center; align-items: center; 
-            gap: 20px; margin-top: 15px; 
+            display: flex; 
+            justify-content: space-between; /* Pushes buttons to the sides */
+            align-items: center; 
+            padding: 0 20px; /* Space from screen edges */
+            margin-top: 15px; 
         }
 
         #leftBtn, #rightBtn, #pauseBtn {
-            width: 75px; height: 75px; border-radius: 50%;
-            border: 4px solid #ffe066; color: white; font-size: 30px;
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 4px solid #ffe066; color: white;
             display: flex; align-items: center; justify-content: center;
             touch-action: none; transition: all 0.05s;
+            font-family: 'Luckiest Guy', cursive;
         }
 
-        #leftBtn, #rightBtn { background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); box-shadow: 0 6px 0 #550000; }
-        #pauseBtn { background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); box-shadow: 0 6px 0 #bc5100; font-size: 24px; }
+        #leftBtn, #rightBtn { 
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); 
+            box-shadow: 0 6px 0 #550000; 
+            font-size: 35px;
+        }
 
-        /* ROW 2: TRY AGAIN */
-        #reset-lane { margin-top: 20px; height: 80px; }
+        /* FIXED: Pause button text fit */
+        #pauseBtn { 
+            background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
+            box-shadow: 0 6px 0 #bc5100; 
+            font-size: 16px; /* Smaller font so it fits inside */
+            letter-spacing: 1px;
+        }
+
+        #reset-lane { margin-top: 10px; height: 80px; }
         #reset { visibility: hidden; }
 
-        /* SHARED ANIMATION CLASS */
+        /* ANIMATION CLASSES */
         .pressed { transform: translateY(6px) !important; box-shadow: 0 2px 0 #1B5E20 !important; }
         .pressed-red { transform: translateY(6px) !important; box-shadow: 0 2px 0 #550000 !important; }
         .pressed-orange { transform: translateY(6px) !important; box-shadow: 0 2px 0 #bc5100 !important; }
@@ -109,6 +106,7 @@ canvas {
     </div>
 
     <script>
+        // --- YOUR ORIGINAL CORE LOGIC (INTERNALS UNTOUCHED) ---
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
@@ -258,7 +256,7 @@ canvas {
             requestAnimationFrame(gameLoop);
         }
 
-        // --- BUTTON HANDLERS WITH ANIMATIONS ---
+        // --- BUTTON HANDLERS ---
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
             const press = () => { el.classList.add('pressed'); callback(); };
@@ -282,12 +280,11 @@ canvas {
         handleMove('leftBtn', 'left', 'pressed-red');
         handleMove('rightBtn', 'right', 'pressed-red');
 
-        // Pause Button logic
         const pBtn = document.getElementById('pauseBtn');
-        pBtn.addEventListener('mousedown', () => { pBtn.classList.add('pressed-orange'); togglePause(); });
-        pBtn.addEventListener('mouseup', () => pBtn.classList.remove('pressed-orange'));
-        pBtn.addEventListener('touchstart', (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); });
-        pBtn.addEventListener('touchend', () => pBtn.classList.remove('pressed-orange'));
+        const pPress = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
+        const pRelease = () => pBtn.classList.remove('pressed-orange');
+        pBtn.addEventListener('touchstart', pPress); pBtn.addEventListener('touchend', pRelease);
+        pBtn.addEventListener('mousedown', pPress); pBtn.addEventListener('mouseup', pRelease);
 
     </script>
 </body>
