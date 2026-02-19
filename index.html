@@ -130,7 +130,6 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // NEWTON: Reverted to your preferred wide horizontal size
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
         let gameOver = false; let isGolden = false;
@@ -169,7 +168,6 @@
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.5)"; 
-            // WIDE WOOD PLANK from photo
             ctx.fillRect(canvas.width/2-250, 10, 500, 80);
             ctx.fillStyle = "#fff"; ctx.font = "42px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, canvas.width/2, 65);
@@ -218,23 +216,21 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // PARALLAX EFFECT
-            let bgOffset = -(newtonX * 0.12); 
-            ctx.drawImage(backgroundImg, bgOffset - 60, -22, canvas.width + 120, canvas.height + 44);
+            // INCREASED PARALLAX EFFECT (0.25 multiplier)
+            // WIDENED BACKGROUND DRAW (canvas.width + 300) to support larger movement range
+            let bgOffset = -(newtonX * 0.25); 
+            ctx.drawImage(backgroundImg, bgOffset - 50, -22, canvas.width + 300, canvas.height + 44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
                 if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
             }
             
-            // NEWTON RENDER: Original 280x160
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            // OVAL OBJECT SIZE from photo: 55 width, 65 height
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 27.5, appleY, 55, 65);
 
-            // Collision adjusted for wide body
             if (appleY > 320 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
