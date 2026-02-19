@@ -220,7 +220,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // 1. DRAW BACKGROUND (Stretched to 1000px)
-            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(backgroundImg, -22, -22, canvas.width+44, canvas.height+44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 14;
