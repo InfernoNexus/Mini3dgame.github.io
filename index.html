@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Newton & Gravity</title>
+    <title>Newton & Gravity Pro</title>
     
     <style>
         body { 
@@ -10,42 +10,52 @@
             overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         
-        canvas { 
-            display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; 
-            background: transparent; touch-action: none;
+        canvas { display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; background: transparent; }
+
+        /* HOME SCREEN STYLES */
+        #startOverlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; max-width: 350px; padding: 30px;
+            background: linear-gradient(#f9d423, #ff4e50); /* Sunset feel */
+            border: 8px solid #3e2723; border-radius: 30px;
+            box-shadow: 0 15px 0 #211512, 0 0 50px rgba(0,0,0,0.4);
+            z-index: 100; display: flex; flex-direction: column; align-items: center;
         }
+
+        .main-btn {
+            font-size: 24px; font-weight: bold; padding: 15px 40px; border-radius: 50px;
+            border: 3px solid #ffe066; color: white; cursor: pointer;
+            background: linear-gradient(#4CAF50, #2E7D32);
+            box-shadow: 0 6px 0 #1B5E20; transition: 0.1s; margin-top: 15px;
+        }
+
+        .main-btn:active { transform: translateY(4px); box-shadow: 0 2px #1B5E20; }
 
         #controls { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
 
         #leftBtn, #rightBtn {
             width: 85px; height: 85px; border-radius: 50%;
-            border: 4px solid #ffe066; color: white;
-            font-size: 35px; cursor: pointer;
+            border: 4px solid #ffe066; color: white; font-size: 35px;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
-            box-shadow: 0 6px 0 #550000;
-            display: flex; align-items: center; justify-content: center;
-            outline: none; touch-action: none; -webkit-tap-highlight-color: transparent;
-            transition: transform 0.05s, box-shadow 0.05s;
+            box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
+            touch-action: none; -webkit-tap-highlight-color: transparent;
         }
 
-        /* Visual feedback for button presses */
-        .pressed { 
-            transform: translateY(4px); 
-            box-shadow: 0 2px #330000 !important; 
-        }
-
-        .restart-btn {
-            margin-top: 5px; font-size: 20px; font-weight: bold;
-            padding: 12px 30px; border-radius: 12px; border: 3px solid #ffe066;
-            background: linear-gradient(#ff4d4d, #990000); color: white;
-            box-shadow: 0 5px #550000; cursor: pointer;
-        }
+        .pressed { transform: translateY(4px); box-shadow: 0 2px #330000 !important; }
+        
+        #reset { visibility: hidden; } /* Hidden until game over */
     </style>
 </head>
 
 <body>
+    <div id="startOverlay">
+        <h1 style="color: white; text-shadow: 3px 3px #3e2723; margin: 0; font-size: 40px;">NEWTON</h1>
+        <p style="color: #3e2723; font-weight: bold; margin: 5px 0;">GRAVITY ADVENTURE</p>
+        <div id="highScoreDisplay" style="color: white; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; margin: 10px;">Best: 0</div>
+        <button class="main-btn" onclick="startGame()">PLAY NOW</button>
+    </div>
+
     <div style="height: 5px;"></div> 
-    <h2 style="color: #2c3e50; text-shadow: 1px 1px white;">🍎 Newton & Gravity 🍎</h2>
     
     <canvas id="game" width="620" height="620"></canvas>
 
@@ -54,14 +64,14 @@
             <button id="leftBtn" oncontextmenu="return false;">◀</button>
             <button id="rightBtn" oncontextmenu="return false;">▶</button>
         </div>
-        <button id="reset" class="restart-btn" onclick="restartGame()">Restart Game</button>
+        <button id="reset" class="main-btn" onclick="startGame()">Try Again</button>
     </div>
 
     <script>
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
-        // --- ASSET LOADING ---
+        // --- ASSETS ---
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -69,168 +79,157 @@
         const appleImg = new Image(); appleImg.src = 'apple.png';
         const goldenAppleImg = new Image(); goldenAppleImg.src = 'goldenapple.png';
 
-        // --- BACKGROUND MUSIC SYSTEM ---
         const bgMusic = new Audio('background_music.mp3');
-        bgMusic.loop = true;
-        bgMusic.volume = 0.5;
+        bgMusic.loop = true; bgMusic.volume = 0.5;
         let musicStarted = false;
 
-        function startMusic() {
-            if (!musicStarted) {
-                bgMusic.play().catch(e => console.log("Audio play blocked"));
-                musicStarted = true;
-            }
-        }
+        // --- GAME STATE & HIGH SCORE ---
+        let gameState = 'HOME';
+        let highScore = localStorage.getItem('newtonHighScore') || 0;
+        document.getElementById('highScoreDisplay').innerText = "Best: " + highScore;
 
-        // --- GAME VARIABLES ---
         let newtonX = 215; let tilt = 0;
         let appleX = 300; let appleY = 0;
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
         let shake = 0; let animationId;
-        let particles = []; let bombs = []; let ambientLeaves = [];
+        let particles = []; let bombs = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 60; const R_LIMIT = 560;
 
-        // Particle System for Bomb Explosion
+        function startGame() {
+            gameState = 'PLAYING';
+            document.getElementById('startOverlay').style.display = 'none';
+            document.getElementById('reset').style.visibility = 'hidden';
+            if(!musicStarted) { bgMusic.play(); musicStarted = true; }
+            bgMusic.currentTime = 0;
+            restartGame();
+        }
+
+        function restartGame() {
+            score = 0; speed = 5; gameOver = false;
+            newtonX = 215; bombs = []; particles = [];
+            resetApple();
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function saveScore() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('newtonHighScore', highScore);
+                document.getElementById('highScoreDisplay').innerText = "Best: " + highScore;
+            }
+        }
+
+        // --- POLISHED WOOD SCOREBOARD ---
+        function drawWoodScore() {
+            ctx.save();
+            const x = canvas.width/2 - 90, y = 25, w = 180, h = 60;
+            
+            // Chains/Ropes
+            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(x+40, 0); ctx.lineTo(x+40, y); ctx.moveTo(x+140, 0); ctx.lineTo(x+140, y); ctx.stroke();
+            
+            // Wooden Board
+            ctx.fillStyle = "#5d4037"; // Dark wood
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
+            
+            // Polished Edge (Highlight)
+            ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fillRect(x, y, w, 5);
+            
+            // Text
+            ctx.fillStyle = "#fff"; ctx.font = "bold 22px 'Courier New'"; ctx.textAlign = "center";
+            ctx.shadowColor = "black"; ctx.shadowBlur = 4;
+            ctx.fillText("SCORE: " + score, canvas.width/2, y + 25);
+            ctx.font = "bold 14px Arial"; ctx.fillText("BEST: " + highScore, canvas.width/2, y + 48);
+            ctx.restore();
+        }
+
+        // --- PARTICLE LOGIC ---
         class Particle {
             constructor(x, y, color) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 15 + 5; 
+                this.size = Math.random() * 15 + 5;
                 this.speedX = (Math.random() - 0.5) * 18;
                 this.speedY = (Math.random() - 0.5) * 18;
-                this.color = color;
-                this.alpha = 1;
-                this.decay = Math.random() * 0.01 + 0.01;
+                this.color = color; this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= this.decay; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.02; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             }
         }
 
-        function createExplosion(x, y) {
-            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ff0000", "#ffffff"];
-            for (let i = 0; i < 100; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
-            }
-        }
-
-        function resetApple(){
-            appleY = 80; appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
-            isGolden = Math.random() < 0.2;
-        }
-
-        function restartGame() {
-            startMusic();
-            bgMusic.currentTime = 0;
-            bgMusic.play();
-            cancelAnimationFrame(animationId);
-            score = 0; speed = 5; gameOver = false; 
-            bombs = []; particles = []; shake = 0;
-            resetApple(); gameLoop();
-        }
+        function resetApple(){ appleY = 80; appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40); isGolden = Math.random() < 0.15; }
 
         function gameLoop() {
+            if (gameState !== 'PLAYING') return;
+
             if (gameOver) {
-                bgMusic.pause(); // Stop music on death
-                ctx.setTransform(1,0,0,1,0,0);
-                particles.forEach((p) => { p.update(); p.draw(); });
+                saveScore();
+                bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "white"; ctx.textAlign = "center";
-                ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
-                ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
+                ctx.fillStyle = "white"; ctx.font = "bold 50px Arial"; ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", canvas.width/2, 300);
+                document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
 
             ctx.setTransform(1,0,0,1,0,0);
-            if (shake > 0) {
-                ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
-                shake *= 0.9;
-            }
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.15, 0, canvas.width + 160, canvas.height);
+            ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.1, 0, canvas.width + 160, canvas.height);
 
-            // Movement
-            if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 9;
-            if (keys.right && newtonX < R_LIMIT - 120) newtonX += 9;
+            // Newton Movement & Tilt
+            if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 10;
+            if (keys.right && newtonX < R_LIMIT - 120) newtonX += 10;
             
-            // Draw Newton
             ctx.save();
-            if(keys.left) tilt = Math.max(tilt - 0.02, -0.1);
-            else if(keys.right) tilt = Math.min(tilt + 0.02, 0.1);
-            else tilt *= 0.9;
-            ctx.translate(newtonX + 85, 560);
-            ctx.rotate(tilt);
+            tilt = keys.left ? -0.1 : (keys.right ? 0.1 : 0);
+            ctx.translate(newtonX + 85, 560); ctx.rotate(tilt);
             ctx.drawImage(newtonImg, -85, -190, 170, 195);
             ctx.restore();
 
+            // Items Falling
+            appleY += speed + (score * 0.1); // Dynamic Speed increase
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 20, appleY - 20, 40, 40);
+
+            if (appleY > 420 && appleY < 520 && appleX > newtonX && appleX < newtonX + 170) {
+                score += isGolden ? 5 : 1; resetApple();
+            } else if (appleY > canvas.height) { gameOver = true; }
+
+            if (Math.random() < 0.015) bombs.push({ x: L_LIMIT + Math.random() * (R_LIMIT-L_LIMIT-45), y: -50, s: 5 + Math.random()*3 });
+            
+            for (let i = bombs.length-1; i>=0; i--) {
+                bombs[i].y += bombs[i].s;
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 45, 45);
+                if (bombs[i].x < newtonX + 130 && bombs[i].x + 45 > newtonX + 40 && bombs[i].y > 380 && bombs[i].y < 540) {
+                    for(let j=0; j<50; j++) particles.push(new Particle(bombs[i].x+22, bombs[i].y+22, "orange"));
+                    shake = 20; gameOver = true;
+                }
+                if (bombs[i].y > canvas.height) bombs.splice(i, 1);
+            }
+
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
 
-            // Apple logic
-            appleY += speed;
-            const currentApple = isGolden ? goldenAppleImg : appleImg;
-            ctx.drawImage(currentApple, appleX - 20, appleY - 20, 40, 40);
-
-            if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
-                score += isGolden ? 5 : 1; resetApple();
-            }
-            if (appleY > canvas.height) gameOver = true;
-
-            // Bombs logic
-            if (Math.random() < 0.01) {
-                bombs.push({ x: L_LIMIT + Math.random() * (R_LIMIT - L_LIMIT - 45), y: -50, size: 45, speed: 4 + Math.random() * 2 });
-            }
-            for (let i = bombs.length - 1; i >= 0; i--) {
-                let b = bombs[i]; b.y += b.speed;
-                ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
-                if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    createExplosion(b.x + 22, b.y + 22);
-                    shake = 30; gameOver = true;
-                }
-                if (b.y > canvas.height) bombs.splice(i, 1);
-            }
-
-            // Scoreboard
-            ctx.fillStyle = "#5d4037"; ctx.fillRect(canvas.width/2 - 80, 20, 160, 45);
-            ctx.fillStyle = "#fff"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-            ctx.fillText("Score: " + score, canvas.width / 2, 49);
-
+            drawWoodScore();
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        // --- INPUT HANDLER WITH MUSIC TRIGGER ---
-        const handleInput = (btnId, key) => {
-            const btn = document.getElementById(btnId);
-            
-            const start = (e) => { 
-                e.preventDefault(); 
-                startMusic(); // Starts music on first move
-                keys[key] = true; 
-                btn.classList.add('pressed');
-            };
-            
-            const end = (e) => { 
-                e.preventDefault(); 
-                keys[key] = false; 
-                btn.classList.remove('pressed');
-            };
-
-            btn.addEventListener('touchstart', start, {passive:false});
-            btn.addEventListener('touchend', end, {passive:false});
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-            btn.addEventListener('mouseleave', end);
+        const handleInput = (id, key) => {
+            const b = document.getElementById(id);
+            const press = (e) => { e.preventDefault(); keys[key] = true; b.classList.add('pressed'); };
+            const release = (e) => { e.preventDefault(); keys[key] = false; b.classList.remove('pressed'); };
+            b.addEventListener('touchstart', press, {passive:false}); b.addEventListener('touchend', release);
+            b.addEventListener('mousedown', press); b.addEventListener('mouseup', release); b.addEventListener('mouseleave', release);
         };
-
-        handleInput('leftBtn', 'left');
-        handleInput('rightBtn', 'right');
-
-        resetApple(); gameLoop();
+        handleInput('leftBtn', 'left'); handleInput('rightBtn', 'right');
     </script>
 </body>
 </html>
