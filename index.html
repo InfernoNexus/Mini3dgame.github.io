@@ -25,10 +25,10 @@
             box-shadow: 0 6px 0 #550000;
             display: flex; align-items: center; justify-content: center;
             outline: none; touch-action: none; -webkit-tap-highlight-color: transparent;
-            transition: transform 0.05s, box-shadow 0.05s; /* Smooth return */
+            transition: transform 0.05s, box-shadow 0.05s;
         }
 
-        /* NEW: This class replaces the :active state which browsers block */
+        /* Visual feedback for button presses */
         .pressed { 
             transform: translateY(4px); 
             box-shadow: 0 2px #330000 !important; 
@@ -40,8 +40,6 @@
             background: linear-gradient(#ff4d4d, #990000); color: white;
             box-shadow: 0 5px #550000; cursor: pointer;
         }
-        
-        .restart-btn:active { transform: translateY(4px); box-shadow: 0 2px #330000; }
     </style>
 </head>
 
@@ -60,11 +58,10 @@
     </div>
 
     <script>
-        // ... (Keep all your previous variable declarations and Audio setup here) ...
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
-        // ASSETS (Assumed in root folder)
+        // --- ASSET LOADING ---
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -72,16 +69,20 @@
         const appleImg = new Image(); appleImg.src = 'apple.png';
         const goldenAppleImg = new Image(); goldenAppleImg.src = 'goldenapple.png';
 
-        // AUDIO (Updated for your GitHub request)
-        const sounds = {
-            bg: new Audio('audio/bg-music.mp3'),
-            catch: new Audio('audio/catch.mp3'),
-            bomb: new Audio('audio/explosion.mp3'),
-            move: new Audio('audio/move.mp3')
-        };
-        sounds.bg.loop = true; sounds.bg.volume = 0.4;
-        let audioInitialized = false;
+        // --- BACKGROUND MUSIC SYSTEM ---
+        const bgMusic = new Audio('background_music.mp3');
+        bgMusic.loop = true;
+        bgMusic.volume = 0.5;
+        let musicStarted = false;
 
+        function startMusic() {
+            if (!musicStarted) {
+                bgMusic.play().catch(e => console.log("Audio play blocked"));
+                musicStarted = true;
+            }
+        }
+
+        // --- GAME VARIABLES ---
         let newtonX = 215; let tilt = 0;
         let appleX = 300; let appleY = 0;
         let score = 0; let speed = 5;
@@ -91,69 +92,52 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 60; const R_LIMIT = 560;
 
-        // ... (Keep Particle class, drawAmbient, drawNewton, createExplosion functions here) ...
-
-        function initAudio() {
-            if (audioInitialized) return;
-            sounds.bg.play().catch(() => {});
-            audioInitialized = true;
+        // Particle System for Bomb Explosion
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 15 + 5; 
+                this.speedX = (Math.random() - 0.5) * 18;
+                this.speedY = (Math.random() - 0.5) * 18;
+                this.color = color;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.01 + 0.01;
+            }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= this.decay; }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
         }
 
-        function playSound(name) {
-            if (!audioInitialized) return;
-            const s = sounds[name].cloneNode();
-            s.volume = sounds[name].volume || 1.0;
-            s.play();
+        function createExplosion(x, y) {
+            const colors = ["#ff4500", "#ff8c00", "#ffd700", "#ff0000", "#ffffff"];
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+            }
         }
 
-        // --- UPDATED INPUT HANDLER ---
-        const handleInput = (btnId, key) => {
-            const btn = document.getElementById(btnId);
-            
-            const start = (e) => { 
-                e.preventDefault(); 
-                initAudio(); 
-                keys[key] = true; 
-                btn.classList.add('pressed'); // Add visual feedback
-            };
-            
-            const end = (e) => { 
-                e.preventDefault(); 
-                keys[key] = false; 
-                btn.classList.remove('pressed'); // Remove visual feedback
-            };
-
-            btn.addEventListener('touchstart', start, {passive:false});
-            btn.addEventListener('touchend', end, {passive:false});
-            btn.addEventListener('touchcancel', end, {passive:false});
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-            btn.addEventListener('mouseleave', end);
-        };
-
-        handleInput('leftBtn', 'left');
-        handleInput('rightBtn', 'right');
-
-        // ... (Keep your existing restartGame and gameLoop logic) ...
         function resetApple(){
             appleY = 80; appleX = L_LIMIT + 20 + Math.random() * (R_LIMIT - L_LIMIT - 40);
             isGolden = Math.random() < 0.2;
         }
 
         function restartGame() {
-            initAudio();
+            startMusic();
+            bgMusic.currentTime = 0;
+            bgMusic.play();
             cancelAnimationFrame(animationId);
             score = 0; speed = 5; gameOver = false; 
             bombs = []; particles = []; shake = 0;
-            sounds.bg.currentTime = 0;
-            sounds.bg.play();
             resetApple(); gameLoop();
         }
 
         function gameLoop() {
             if (gameOver) {
-                sounds.bg.pause();
+                bgMusic.pause(); // Stop music on death
                 ctx.setTransform(1,0,0,1,0,0);
+                particles.forEach((p) => { p.update(); p.draw(); });
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.textAlign = "center";
                 ctx.font = "bold 40px Arial"; ctx.fillText("GAME OVER", canvas.width / 2, 300);
@@ -170,7 +154,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.15, 0, canvas.width + 160, canvas.height);
 
-            // Newton Movement
+            // Movement
             if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 9;
             if (keys.right && newtonX < R_LIMIT - 120) newtonX += 9;
             
@@ -184,13 +168,14 @@
             ctx.drawImage(newtonImg, -85, -190, 170, 195);
             ctx.restore();
 
+            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
+
             // Apple logic
             appleY += speed;
             const currentApple = isGolden ? goldenAppleImg : appleImg;
             ctx.drawImage(currentApple, appleX - 20, appleY - 20, 40, 40);
 
             if (appleY > 400 && appleY < 500 && appleX > newtonX && appleX < newtonX + 170) {
-                playSound('catch');
                 score += isGolden ? 5 : 1; resetApple();
             }
             if (appleY > canvas.height) gameOver = true;
@@ -203,7 +188,7 @@
                 let b = bombs[i]; b.y += b.speed;
                 ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
                 if (b.x < newtonX + 130 && b.x + b.size > newtonX + 40 && b.y > 380 && b.y < 540) {
-                    playSound('bomb');
+                    createExplosion(b.x + 22, b.y + 22);
                     shake = 30; gameOver = true;
                 }
                 if (b.y > canvas.height) bombs.splice(i, 1);
@@ -217,6 +202,33 @@
             ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
             animationId = requestAnimationFrame(gameLoop);
         }
+
+        // --- INPUT HANDLER WITH MUSIC TRIGGER ---
+        const handleInput = (btnId, key) => {
+            const btn = document.getElementById(btnId);
+            
+            const start = (e) => { 
+                e.preventDefault(); 
+                startMusic(); // Starts music on first move
+                keys[key] = true; 
+                btn.classList.add('pressed');
+            };
+            
+            const end = (e) => { 
+                e.preventDefault(); 
+                keys[key] = false; 
+                btn.classList.remove('pressed');
+            };
+
+            btn.addEventListener('touchstart', start, {passive:false});
+            btn.addEventListener('touchend', end, {passive:false});
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        };
+
+        handleInput('leftBtn', 'left');
+        handleInput('rightBtn', 'right');
 
         resetApple(); gameLoop();
     </script>
