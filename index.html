@@ -130,8 +130,8 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // NEWTON SIZE: Slimmer and taller like the photo
-        let newtonX = 430; let appleX = 500; let appleY = 0;
+        // NEWTON: Reverted to your preferred wide horizontal size
+        let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
         let gameOver = false; let isGolden = false;
         let shake = 0; let deathTimer = 0;
@@ -148,7 +148,7 @@
             bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
             score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
-            newtonX = 430; bombs = []; particles = [];
+            newtonX = 425; bombs = []; particles = [];
             resetApple();
             gameLoop();
         }
@@ -169,7 +169,7 @@
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.5)"; 
-            // WIDER BOARD: Matches the plank in the photo
+            // WIDE WOOD PLANK from photo
             ctx.fillRect(canvas.width/2-250, 10, 500, 80);
             ctx.fillStyle = "#fff"; ctx.font = "42px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, canvas.width/2, 65);
@@ -224,17 +224,18 @@
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-                if (keys.right && newtonX < R_LIMIT - 140) newtonX += 15;
+                if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
             }
             
-            // NEWTON RENDER: 140 width, 240 height (matches photo)
-            ctx.drawImage(newtonImg, newtonX, 240, 140, 240);
+            // NEWTON RENDER: Original 280x160
+            ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            // OBJECT SIZE: 55x65 (slightly oval like the photo)
+            // OVAL OBJECT SIZE from photo: 55 width, 65 height
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 27.5, appleY, 55, 65);
 
-            if (appleY > 240 && appleY < 400 && appleX > newtonX && appleX < newtonX + 140 && deathTimer === 0) {
+            // Collision adjusted for wide body
+            if (appleY > 320 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
                 resetApple();
@@ -250,7 +251,7 @@
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 55, 65);
-                if (bombs[i].x < newtonX + 120 && bombs[i].x + 55 > newtonX + 20 && bombs[i].y > 240 && bombs[i].y < 420 && deathTimer === 0) {
+                if (bombs[i].x < newtonX + 260 && bombs[i].x + 55 > newtonX + 20 && bombs[i].y > 320 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<25; j++) particles.push(new Particle(bombs[i].x, bombs[i].y));
                     shake = 35;
                     deathTimer = 40;
