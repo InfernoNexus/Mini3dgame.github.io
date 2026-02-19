@@ -168,7 +168,7 @@
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-120, 20, 240, 50);
+            ctx.fillRect(canvas.width/2-170, 20, 340, 50);
             ctx.fillStyle = "#fff"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, canvas.width/2, 55);
             ctx.restore();
@@ -231,10 +231,10 @@
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            // APPLE WIDTH: 110 (+50). Centered by offset -55.
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 55, appleY - 30, 110, 60);
+            // APPLE WIDTH: 90 (+30 from original). Centered by offset -45.
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 45, appleY - 30, 90, 60);
 
-            if (appleY > 340 && appleY < 460 && appleX > newtonX - 25 && appleX < newtonX + 305 && deathTimer === 0) {
+            if (appleY > 340 && appleY < 460 && appleX > newtonX - 15 && appleX < newtonX + 295 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
                 resetApple();
@@ -249,8 +249,8 @@
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                // BOMB WIDTH: 110 (+50). Centered by offset -25 from anchor.
-                ctx.drawImage(bombImg, bombs[i].x - 25, bombs[i].y, 110, 60);
+                // BOMB WIDTH: 90 (+30 from original). Offset -15 to center.
+                ctx.drawImage(bombImg, bombs[i].x - 15, bombs[i].y, 90, 60);
                 if (bombs[i].x < newtonX + 240 && bombs[i].x + 60 > newtonX + 40 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<35; j++) particles.push(new Particle(bombs[i].x+30, bombs[i].y+30));
                     shake = 35;
