@@ -14,19 +14,17 @@
         
         canvas { display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; background: transparent; }
 
-        /* FIX: Ensuring the background image is forced to show */
         #startOverlay {
             position: fixed; 
             top: 0; 
             left: 0; 
             width: 100vw; 
             height: 100vh;
-            /* We use the image name exactly as it appears in your game code */
             background-image: url('background.png'); 
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
-            background-color: #b0e2ff; /* Fallback color */
+            background-color: #b0e2ff;
             z-index: 1000;
             display: flex; 
             flex-direction: column; 
@@ -41,16 +39,24 @@
             margin: 0;
         }
 
+        /* BUTTON ANIMATION CORE */
         .main-btn {
             font-family: 'Luckiest Guy', cursive;
             font-size: 32px; padding: 20px 60px; border-radius: 50px;
             border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32);
-            box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 30px;
+            box-shadow: 0 8px 0 #1B5E20; 
+            transition: all 0.05s; /* Fast snap for animation */
+            margin-top: 30px;
             outline: none; -webkit-tap-highlight-color: transparent;
+            display: inline-block;
         }
 
-        .main-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #1B5E20; }
+        /* The Pressing Effect */
+        .main-btn:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 2px 0 #1B5E20; 
+        }
 
         #controls { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
 
@@ -60,11 +66,17 @@
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
             box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
             touch-action: none;
+            transition: all 0.05s;
+        }
+
+        /* SPACING FIX FOR RESET BUTTON */
+        #reset { 
+            visibility: hidden; 
+            margin: 20px auto; /* Creates space between canvas and arrows */
+            display: block; 
         }
 
         .pressed { transform: translateY(4px); box-shadow: 0 2px #330000 !important; }
-        
-        #reset { visibility: hidden; position: fixed; bottom: 20%; left: 50%; transform: translateX(-50%); z-index: 101;}
     </style>
 </head>
 
@@ -78,15 +90,16 @@
     <canvas id="game" width="620" height="620"></canvas>
 
     <div id="mobile-ui">
+        <button id="reset" class="main-btn">TRY AGAIN</button>
+        
         <div id="controls">
             <button id="leftBtn">◀</button>
             <button id="rightBtn">▶</button>
         </div>
-        <button id="reset" class="main-btn">TRY AGAIN</button>
     </div>
 
     <script>
-        // DO NOT TOUCH - YOUR ORIGINAL GAME LOGIC
+        // ORIGINAL GAME LOGIC (UNTOUCHED)
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
