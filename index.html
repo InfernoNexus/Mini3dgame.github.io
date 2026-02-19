@@ -67,7 +67,7 @@
         }
 
         #pauseBtn { 
-            width: 70px; height: 70px; border-radius: 50%;
+            width: 75px; height: 75px; border-radius: 50%;
             border: 3px solid #ffe066; color: white;
             background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
             box-shadow: 0 5px 0 #bc5100; font-size: 14px; 
@@ -130,7 +130,8 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        let newtonX = 425; let appleX = 500; let appleY = 0;
+        // NEWTON SIZE: Slimmer and taller like the photo
+        let newtonX = 430; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
         let gameOver = false; let isGolden = false;
         let shake = 0; let deathTimer = 0;
@@ -147,7 +148,7 @@
             bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
             score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
-            newtonX = 425; bombs = []; particles = [];
+            newtonX = 430; bombs = []; particles = [];
             resetApple();
             gameLoop();
         }
@@ -160,17 +161,18 @@
         }
 
         function resetApple() {
-            appleY = -60;
-            appleX = L_LIMIT + 60 + Math.random() * (R_LIMIT - L_LIMIT - 120);
+            appleY = -100;
+            appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
             isGolden = Math.random() < 0.15;
         }
 
         function drawWoodScore() {
             ctx.save();
-            ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-100, 15, 200, 40);
-            ctx.fillStyle = "#fff"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, canvas.width/2, 45);
+            ctx.fillStyle = "rgba(0,0,0,0.5)"; 
+            // WIDER BOARD: Matches the plank in the photo
+            ctx.fillRect(canvas.width/2-250, 10, 500, 80);
+            ctx.fillStyle = "#fff"; ctx.font = "42px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, canvas.width/2, 65);
             ctx.restore();
         }
 
@@ -205,14 +207,8 @@
                 }
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.save();
-                ctx.translate(canvas.width/2, 280);
-                ctx.scale(1.4, 1); 
                 ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", 0, 0);
-                ctx.restore();
-                
+                ctx.fillText("GAME OVER", canvas.width/2, 280);
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
@@ -222,23 +218,25 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let bgOffset = -(newtonX * 0.1); 
-            ctx.drawImage(backgroundImg, bgOffset - 50, -22, canvas.width + 100, canvas.height + 44);
+            // PARALLAX EFFECT
+            let bgOffset = -(newtonX * 0.12); 
+            ctx.drawImage(backgroundImg, bgOffset - 60, -22, canvas.width + 120, canvas.height + 44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-                if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
+                if (keys.right && newtonX < R_LIMIT - 140) newtonX += 15;
             }
             
-            ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
+            // NEWTON RENDER: 140 width, 240 height (matches photo)
+            ctx.drawImage(newtonImg, newtonX, 240, 140, 240);
 
             appleY += speed;
-            // WIDTH: 55px (50+5), HEIGHT: 50px
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 27.5, appleY - 25, 55, 50);
+            // OBJECT SIZE: 55x65 (slightly oval like the photo)
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 27.5, appleY, 55, 65);
 
-            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
+            if (appleY > 240 && appleY < 400 && appleX > newtonX && appleX < newtonX + 140 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
-                speed += 0.07;
+                speed += 0.08;
                 resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
                 if (isGolden) resetApple(); 
@@ -246,14 +244,13 @@
             }
 
             if (Math.random() < 0.012 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-55), y: -50, s: 3 + Math.random()*2 });
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-55), y: -100, s: 4 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                // WIDTH: 55px (50+5), HEIGHT: 50px
-                ctx.drawImage(bombImg, bombs[i].x - 27.5, bombs[i].y, 55, 50);
-                if (bombs[i].x < newtonX + 260 && bombs[i].x + 55 > newtonX + 20 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 55, 65);
+                if (bombs[i].x < newtonX + 120 && bombs[i].x + 55 > newtonX + 20 && bombs[i].y > 240 && bombs[i].y < 420 && deathTimer === 0) {
                     for(let j=0; j<25; j++) particles.push(new Particle(bombs[i].x, bombs[i].y));
                     shake = 35;
                     deathTimer = 40;
