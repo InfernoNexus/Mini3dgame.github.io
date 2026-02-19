@@ -168,16 +168,17 @@
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-170, 20, 340, 50);
-            ctx.fillStyle = "#fff"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, canvas.width/2, 55);
+            // SHORTER SCOREBOARD: Width 200, Height 40
+            ctx.fillRect(canvas.width/2-100, 15, 200, 40);
+            ctx.fillStyle = "#fff"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, canvas.width/2, 45);
             ctx.restore();
         }
 
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 12 + 6;
+                this.size = Math.random() * 8 + 4;
                 this.speedX = (Math.random() - 0.5) * 15;
                 this.speedY = (Math.random() - 0.5) * 15;
                 this.alpha = 1;
@@ -233,10 +234,10 @@
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            // APPLE HEIGHT: Updated to 60px to match bombs
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 45, appleY - 30, 90, 60);
+            // DRASTICALLY REDUCED SIZE: Width 40, Height 40
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 20, appleY - 20, 40, 40);
 
-            if (appleY > 340 && appleY < 460 && appleX > newtonX - 15 && appleX < newtonX + 295 && deathTimer === 0) {
+            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
                 resetApple();
@@ -246,14 +247,15 @@
             }
 
             if (Math.random() < 0.012 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-60), y: -60, s: 3 + Math.random()*2 });
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-40), y: -60, s: 3 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                ctx.drawImage(bombImg, bombs[i].x - 15, bombs[i].y, 90, 60);
-                if (bombs[i].x < newtonX + 240 && bombs[i].x + 60 > newtonX + 40 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
-                    for(let j=0; j<35; j++) particles.push(new Particle(bombs[i].x+30, bombs[i].y+30));
+                // DRASTICALLY REDUCED SIZE: Width 40, Height 40
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 40, 40);
+                if (bombs[i].x < newtonX + 260 && bombs[i].x + 40 > newtonX + 20 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
+                    for(let j=0; j<25; j++) particles.push(new Particle(bombs[i].x+20, bombs[i].y+20));
                     shake = 35;
                     deathTimer = 40;
                 }
