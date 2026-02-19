@@ -130,9 +130,9 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // NEW SCALED SIZES (0.8x multiplier)
-        const nW = 224; const nH = 128; // Newton: 280*0.8, 160*0.8
-        const iW = 60; const iH = 44;   // Item: 75*0.8, 55*0.8
+        // NEW 0.9x SCALED SIZES (Goldilocks Zone)
+        const nW = 252; const nH = 144; // Newton
+        const iW = 68;  const iH = 50;  // Items
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
@@ -183,12 +183,12 @@
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 6 + 3;
-                this.speedX = (Math.random() - 0.5) * 12;
-                this.speedY = (Math.random() - 0.5) * 12;
+                this.size = Math.random() * 7 + 3;
+                this.speedX = (Math.random() - 0.5) * 13;
+                this.speedY = (Math.random() - 0.5) * 13;
                 this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.05; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.045; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "#ffaa00";
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
@@ -236,15 +236,13 @@
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
             
-            // DRAW SCALED NEWTON
             ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
 
             appleY += speed;
-            // DRAW SCALED APPLE
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            // Catch Logic Adjusted for smaller Newton
-            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 40) && appleX > newtonX + 30 && appleX < newtonX + (nW - 30) && deathTimer === 0) {
+            // Catching logic for 0.9x scale
+            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 35 && appleX < newtonX + (nW - 35) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
                 resetApple();
@@ -261,14 +259,13 @@
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, iW, iH);
                 
-                // REFINED BOMB HITBOX for smaller size
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
                 
-                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) &&
-                    bCY > (500 - nH - 10) && bCY < 480 && deathTimer === 0) {
-                    for(let j=0; j<20; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
-                    shake = 30;
+                if (bCX > newtonX + 45 && bCX < newtonX + (nW - 45) &&
+                    bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
+                    for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
+                    shake = 32;
                     deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
