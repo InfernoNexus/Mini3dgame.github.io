@@ -12,37 +12,49 @@
             overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         
-        canvas { display: block; margin: 10px auto 0 auto; width: 95%; max-width: 520px; background: transparent; }
+        /* The Canvas Container */
+        #game-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 10px;
+        }
 
-        /* HOME SCREEN - Fixed to show the game background */
+        canvas { 
+            display: block; width: 95vw; max-width: 520px; 
+            background: transparent; 
+        }
+
+        /* FIXED OVERLAY: Transparent & Centered on the Canvas */
         #startOverlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.1); /* Very light tint so forest shows through */
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0); /* Completely transparent */
             z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         .forest-title {
             font-family: 'Luckiest Guy', cursive;
-            font-size: 60px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20; margin: 0;
+            font-size: 50px; color: #4CAF50;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 15px rgba(255,255,255,0.5); 
+            margin: 0; padding-top: 50px;
         }
 
         .main-btn {
             font-family: 'Luckiest Guy', cursive;
-            font-size: 32px; padding: 20px 60px; border-radius: 50px;
+            font-size: 28px; padding: 18px 50px; border-radius: 50px;
             border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32);
-            box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 30px;
+            box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 20px;
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
         .main-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #1B5E20; }
 
-        #controls { display: flex; justify-content: center; gap: 30px; margin-top: 25px; }
+        #controls { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
 
         #leftBtn, #rightBtn {
-            width: 85px; height: 85px; border-radius: 50%;
+            width: 80px; height: 80px; border-radius: 50%;
             border: 4px solid #ffe066; color: white; font-size: 35px;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%);
             box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
@@ -51,18 +63,19 @@
 
         .pressed { transform: translateY(4px); box-shadow: 0 2px #330000 !important; }
         
-        #reset { visibility: hidden; margin-top: 30px; }
+        #reset { visibility: hidden; margin-top: 20px; }
     </style>
 </head>
 
 <body>
-    <div id="startOverlay">
-        <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
-        <div id="homeBestScore" style="color: #fff; font-size: 24px; margin-top: 20px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000;">BEST: 0</div>
-        <button id="playBtn" class="main-btn">PLAY START</button>
+    <div id="game-container">
+        <div id="startOverlay">
+            <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
+            <div id="homeBestScore" style="color: #fff; font-size: 22px; margin-top: 10px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000;">BEST: 0</div>
+            <button id="playBtn" class="main-btn">PLAY START</button>
+        </div>
+        <canvas id="game" width="620" height="620"></canvas>
     </div>
-
-    <canvas id="game" width="620" height="620"></canvas>
 
     <div id="mobile-ui">
         <div id="controls">
@@ -76,7 +89,6 @@
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
-        // --- ASSETS ---
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -132,12 +144,12 @@
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 10 + 3;
-                this.speedX = (Math.random() - 0.5) * 12;
-                this.speedY = (Math.random() - 0.5) * 12;
+                this.size = Math.random() * 8 + 2;
+                this.speedX = (Math.random() - 0.5) * 10;
+                this.speedY = (Math.random() - 0.5) * 10;
                 this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.04; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.05; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "orange";
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
@@ -145,11 +157,11 @@
         }
 
         function gameLoop() {
-            // Logic always draws the background, even on HOME screen
+            // Draw background even on HOME screen
             ctx.setTransform(1,0,0,1,0,0);
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.85; }
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.8; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.1, 0, canvas.width + 160, canvas.height);
+            ctx.drawImage(backgroundImg, -80, 0, canvas.width + 160, canvas.height);
 
             if (gameState === 'HOME') {
                 ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
@@ -177,7 +189,6 @@
                 return;
             }
 
-            // Newton and Items logic
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 10;
                 if (keys.right && newtonX < R_LIMIT - 120) newtonX += 10;
@@ -194,7 +205,7 @@
             if (appleY > 420 && appleY < 520 && appleX > newtonX && appleX < newtonX + 170 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); else { deathTimer = 20; shake = 15; }
+                if (isGolden) resetApple(); else { deathTimer = 15; shake = 10; }
             }
 
             if (Math.random() < 0.009 && deathTimer === 0) {
@@ -208,8 +219,8 @@
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 45, 45);
                 if (bombs[i].x < newtonX + 130 && bombs[i].x + 45 > newtonX + 40 && bombs[i].y > 380 && bombs[i].y < 540 && deathTimer === 0) {
-                    for(let j=0; j<30; j++) particles.push(new Particle(bombs[i].x+22, bombs[i].y+22));
-                    shake = 35; deathTimer = 25;
+                    for(let j=0; j<20; j++) particles.push(new Particle(bombs[i].x+22, bombs[i].y+22));
+                    shake = 30; deathTimer = 20;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
@@ -239,7 +250,6 @@
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
 
-        // Start the loop immediately to show background
         gameLoop();
     </script>
 </body>
