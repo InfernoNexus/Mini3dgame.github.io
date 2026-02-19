@@ -263,7 +263,7 @@
             drawWoodScore();
             
             // 6. DRAW BORDER (On top but stretched)
-            ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
             
             requestAnimationFrame(gameLoop);
         }
