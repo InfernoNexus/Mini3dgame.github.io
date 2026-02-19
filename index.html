@@ -131,3 +131,126 @@
             ctx.save();
             const bx = canvas.width/2 - 90, by = 25, bw = 180, bh = 60;
             ctx.fillStyle = "#5d4037"; ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = "#3e2723"; ctx.lineWidth = 3; ctx.strokeRect(bx, by, bw, bh);
+            
+            ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+            ctx.font = "bold 20px Arial";
+            ctx.fillText("SCORE: " + score, canvas.width/2, 50);
+            ctx.font = "bold 12px Arial";
+            ctx.fillText("BEST: " + highScore, canvas.width/2, 75); // Restored
+            ctx.restore();
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 10 + 3;
+                this.speedX = (Math.random() - 0.5) * 12;
+                this.speedY = (Math.random() - 0.5) * 12;
+                this.alpha = 1;
+            }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.04; }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "orange";
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
+            }
+        }
+
+        function gameLoop() {
+            if (gameState !== 'PLAYING') return;
+
+            // Short Death Delay logic
+            if (deathTimer > 0) {
+                deathTimer--;
+                if (deathTimer === 0) gameOver = true;
+            }
+
+            if (gameOver) {
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('newtonHighScore', highScore);
+                    document.getElementById('homeBestScore').innerText = "BEST: " + highScore;
+                }
+                bgMusic.pause();
+                ctx.setTransform(1,0,0,1,0,0);
+                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white"; ctx.font = "bold 50px Luckiest Guy"; ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", canvas.width/2, 300);
+                document.getElementById('reset').style.visibility = 'visible';
+                return;
+            }
+
+            ctx.setTransform(1,0,0,1,0,0);
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.85; }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(backgroundImg, -80 + (canvas.width/2 - newtonX)*0.1, 0, canvas.width + 160, canvas.height);
+
+            // Newton logic
+            if (deathTimer === 0) {
+                if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 10;
+                if (keys.right && newtonX < R_LIMIT - 120) newtonX += 10;
+            }
+            
+            ctx.save();
+            ctx.translate(newtonX + 85, 560);
+            ctx.rotate(keys.left ? -0.1 : (keys.right ? 0.1 : 0));
+            ctx.drawImage(newtonImg, -85, -190, 170, 195);
+            ctx.restore();
+
+            appleY += speed;
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 20, appleY - 20, 40, 40);
+
+            // Catching
+            if (appleY > 420 && appleY < 520 && appleX > newtonX && appleX < newtonX + 170 && deathTimer === 0) {
+                score += isGolden ? 5 : 1; resetApple();
+            } else if (appleY > canvas.height && deathTimer === 0) {
+                if (isGolden) resetApple(); 
+                else { deathTimer = 20; shake = 15; } // Reduced delay to 20 frames
+            }
+
+            // Bomb Spawning (Fair logic)
+            if (Math.random() < 0.009 && deathTimer === 0) {
+                let bx = L_LIMIT + Math.random() * (R_LIMIT-L_LIMIT-45);
+                if (Math.abs(bx - appleX) < 110) bx = (bx < appleX) ? bx - 120 : bx + 120;
+                bx = Math.max(L_LIMIT, Math.min(R_LIMIT-45, bx));
+                bombs.push({ x: bx, y: -50, s: 5 + Math.random()*2 });
+            }
+            
+            for (let i = bombs.length-1; i>=0; i--) {
+                bombs[i].y += bombs[i].s;
+                ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 45, 45);
+                if (bombs[i].x < newtonX + 130 && bombs[i].x + 45 > newtonX + 40 && bombs[i].y > 380 && bombs[i].y < 540 && deathTimer === 0) {
+                    for(let j=0; j<30; j++) particles.push(new Particle(bombs[i].x+22, bombs[i].y+22));
+                    shake = 35; deathTimer = 25; // Reduced death delay
+                }
+                if (bombs[i].y > canvas.height) bombs.splice(i, 1);
+            }
+
+            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
+            drawWoodScore();
+            ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- BUTTON HANDLING ---
+        const setupBtn = (id, callback) => {
+            const el = document.getElementById(id);
+            el.addEventListener('click', callback);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); callback(); }, {passive: false});
+        };
+
+        setupBtn('playBtn', startGame);
+        setupBtn('reset', startGame);
+
+        const handleMove = (id, key) => {
+            const el = document.getElementById(id);
+            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('pressed'); };
+            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('pressed'); };
+            el.addEventListener('touchstart', start, {passive: false}); el.addEventListener('touchend', stop);
+            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop); el.addEventListener('mouseleave', stop);
+        };
+        handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
+    </script>
+</body>
+</html>
