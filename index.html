@@ -9,21 +9,28 @@
 
         body { 
             margin: 0; text-align: center; font-family: 'Segoe UI', Arial, sans-serif; background: #b0e2ff; 
-            overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+            overflow: hidden; touch-趣味: none; user-select: none; -webkit-user-select: none;
         }
         
-        #game-container {
+        /* This container keeps everything perfectly aligned */
+        #game-wrapper {
             position: relative;
-            display: inline-block;
+            width: 100vw;
+            max-width: 520px;
+            margin: 0 auto;
+            aspect-ratio: 1 / 1; /* Forces the square shape like the old code */
             margin-top: 10px;
         }
 
         canvas { 
-            display: block; width: 95vw; max-width: 520px; 
-            background: transparent; 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            background: transparent;
+            border-radius: 8px;
         }
 
-        /* HOME SCREEN - Kept exactly as you liked it */
+        /* HOME SCREEN - Positioned exactly over the square game area */
         #startOverlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -31,12 +38,13 @@
             background-size: cover;
             z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 8px;
         }
 
         .forest-title {
             font-family: 'Luckiest Guy', cursive;
-            font-size: 50px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
+            font-size: 45px; color: #4CAF50;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 15px rgba(255,255,255,0.7); 
             margin: 0;
         }
 
@@ -45,14 +53,15 @@
             font-size: 28px; padding: 18px 50px; border-radius: 50px;
             border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32);
-            box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 20px;
+            box-shadow: 0 8px 0 #1B5E20; transition: all 0.1s; margin-top: 15px;
             outline: none; -webkit-tap-highlight-color: transparent;
         }
 
         .main-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #1B5E20; }
 
-        /* BUTTON SPACING - Fixed as requested */
-        #controls { display: flex; justify-content: center; gap: 40px; margin-top: 25px; }
+        /* BUTTONS - Added more spacing so they don't overlap the character */
+        #mobile-ui { margin-top: 20px; }
+        #controls { display: flex; justify-content: center; gap: 50px; margin-bottom: 20px; }
 
         #leftBtn, #rightBtn {
             width: 85px; height: 85px; border-radius: 50%;
@@ -64,15 +73,15 @@
 
         .pressed { transform: translateY(4px); box-shadow: 0 2px #330000 !important; }
         
-        #reset { visibility: hidden; margin-top: 25px; }
+        #reset { visibility: hidden; }
     </style>
 </head>
 
 <body>
-    <div id="game-container">
+    <div id="game-wrapper">
         <div id="startOverlay">
             <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
-            <div id="homeBestScore" style="color: #fff; font-size: 24px; margin-top: 15px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000; background: rgba(0,0,0,0.3); padding: 5px 20px; border-radius: 20px;">BEST: 0</div>
+            <div id="homeBestScore" style="color: #fff; font-size: 22px; margin-top: 10px; font-family: 'Luckiest Guy'; text-shadow: 2px 2px #000; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 15px;">BEST: 0</div>
             <button id="playBtn" class="main-btn">PLAY START</button>
         </div>
         <canvas id="game" width="620" height="620"></canvas>
@@ -104,7 +113,7 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('homeBestScore').innerText = "BEST: " + highScore;
 
-        // ORIGINAL GAME VARIABLES
+        // --- THE OLD LOGIC YOU WANTED BACK ---
         let newtonX = 215; let appleX = 300; let appleY = 0;
         let score = 0; let speed = 5;
         let gameOver = false; let isGolden = false;
@@ -117,9 +126,7 @@
             gameState = 'PLAYING';
             document.getElementById('startOverlay').style.display = 'none';
             document.getElementById('reset').style.visibility = 'hidden';
-            bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
-            
             score = 0; speed = 5; gameOver = false; deathTimer = 0;
             newtonX = 215; bombs = []; particles = [];
             resetApple();
@@ -164,8 +171,8 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.8; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Fixed Background rendering
-            ctx.drawImage(backgroundImg, -80, 0, canvas.width + 160, canvas.height);
+            // Fixed Background rendering to fill the square frame
+            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
 
             if (deathTimer > 0) {
                 deathTimer--;
@@ -187,18 +194,13 @@
                 return;
             }
 
-            // Original Newton Movement
+            // Newton Movement
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT - 60) newtonX -= 10;
                 if (keys.right && newtonX < R_LIMIT - 120) newtonX += 10;
             }
-            ctx.save();
-            ctx.translate(newtonX + 85, 560);
-            ctx.rotate(keys.left ? -0.1 : (keys.right ? 0.1 : 0));
-            ctx.drawImage(newtonImg, -85, -190, 170, 195);
-            ctx.restore();
+            ctx.drawImage(newtonImg, newtonX, 380, 170, 195);
 
-            // Original Apple Logic
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 20, appleY - 20, 40, 40);
 
@@ -208,27 +210,24 @@
                 if (isGolden) resetApple(); else { deathTimer = 20; shake = 15; }
             }
 
-            // Original Bomb Logic with "Fair Spawning"
+            // Bomb Logic
             if (Math.random() < 0.009 && deathTimer === 0) {
-                let bx = L_LIMIT + Math.random() * (R_LIMIT-L_LIMIT-45);
-                if (Math.abs(bx - appleX) < 110) bx = (bx < appleX) ? bx - 120 : bx + 120;
-                bx = Math.max(L_LIMIT, Math.min(R_LIMIT-45, bx));
-                bombs.push({ x: bx, y: -50, s: 5 + Math.random()*2 });
+                bombs.push({ x: L_LIMIT + Math.random() * (R_LIMIT-L_LIMIT-45), y: -50, s: 5 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 45, 45);
-                if (bombs[i].x < newtonX + 130 && bombs[i].x + 45 > newtonX + 40 && bombs[i].y > 380 && bombs[i].y < 540 && deathTimer === 0) {
+                if (bombs[i].x < newtonX + 130 && bombs[i].x + 45 > newtonX + 40 && bombs[i].y > 380 && bombs[i].y < 540) {
                     for(let j=0; j<20; j++) particles.push(new Particle(bombs[i].x+22, bombs[i].y+22));
-                    shake = 30; deathTimer = 20;
+                    shake = 30; deathTimer = 20; bombs.splice(i, 1);
                 }
-                if (bombs[i].y > canvas.height) bombs.splice(i, 1);
+                else if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
 
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
             drawWoodScore();
-            ctx.drawImage(borderImg, -20, -20, canvas.width+40, canvas.height+40);
+            ctx.drawImage(borderImg, 0, 0, canvas.width, canvas.height);
             requestAnimationFrame(gameLoop);
         }
 
