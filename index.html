@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Newton Forest Adventure</title>
+    <title>Newton Forest Adventure - Zoomed Out</title>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
@@ -28,7 +28,6 @@
             height: auto;
             flex-grow: 1; 
             background: #1a3c1a; 
-            image-rendering: auto;
         }
 
         #startOverlay {
@@ -130,12 +129,12 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // 0.9x SCALED SIZES 
-        const nW = 252; const nH = 144; 
-        const iW = 68;  const iH = 50;  
+        // ZOOMED OUT SCALE (0.7x multiplier for everything)
+        const nW = 196; const nH = 112; // Newton (Originally 280x160)
+        const iW = 52;  const iH = 38;  // Items (Originally 75x55)
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
-        let score = 0; let speed = 5.5; 
+        let score = 0; let speed = 5.0; 
         let gameOver = false; let isGolden = false;
         let shake = 0; let deathTimer = 0;
         let bombs = []; let particles = [];
@@ -150,8 +149,8 @@
             document.getElementById('pauseBtn').innerText = "PAUSE";
             bgMusic.currentTime = 0;
             bgMusic.play().catch(() => {});
-            score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
-            newtonX = 425; bombs = []; particles = [];
+            score = 0; speed = 5.0; gameOver = false; deathTimer = 0;
+            newtonX = 400; bombs = []; particles = [];
             resetApple();
             gameLoop();
         }
@@ -164,31 +163,31 @@
         }
 
         function resetApple() {
-            appleY = -100;
-            appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
+            appleY = -80;
+            appleX = L_LIMIT + 50 + Math.random() * (R_LIMIT - L_LIMIT - 100);
             isGolden = Math.random() < 0.15;
         }
 
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-100, 15, 200, 45);
-            ctx.strokeStyle = "#4e2c0e"; ctx.lineWidth = 4;
-            ctx.strokeRect(canvas.width/2-100, 15, 200, 45);
-            ctx.fillStyle = "#fff"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, canvas.width/2, 47);
+            ctx.fillRect(canvas.width/2-80, 10, 160, 40);
+            ctx.strokeStyle = "#4e2c0e"; ctx.lineWidth = 3;
+            ctx.strokeRect(canvas.width/2-80, 10, 160, 40);
+            ctx.fillStyle = "#fff"; ctx.font = "20px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, canvas.width/2, 37);
             ctx.restore();
         }
 
         class Particle {
             constructor(x, y) {
                 this.x = x; this.y = y;
-                this.size = Math.random() * 7 + 3;
-                this.speedX = (Math.random() - 0.5) * 13;
-                this.speedY = (Math.random() - 0.5) * 13;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = (Math.random() - 0.5) * 10;
+                this.speedY = (Math.random() - 0.5) * 10;
                 this.alpha = 1;
             }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.045; }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.05; }
             draw() {
                 ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "#ffaa00";
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
@@ -214,8 +213,8 @@
                 
                 ctx.save();
                 ctx.translate(canvas.width/2, 280);
-                ctx.scale(1.8, 1); 
-                ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center";
+                ctx.scale(1.5, 1); 
+                ctx.fillStyle = "white"; ctx.font = "60px Luckiest Guy"; ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", 0, 0);
                 ctx.restore();
 
@@ -224,39 +223,40 @@
             }
 
             ctx.setTransform(1,0,0,1,0,0);
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.85; }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // ZOOMED OUT BACKGROUND LOGIC
-            // Drawing the image at 1800px width (1.8x zoom out)
-            const bgZoomWidth = canvas.width * 1.8;
-            const bgZoomHeight = canvas.height * 1.8;
-            // Center the "zoomed out" image and apply parallax
-            let bgOffset = -(newtonX * 0.4) - 350; 
-            ctx.drawImage(backgroundImg, bgOffset, -180, bgZoomWidth, bgZoomHeight);
+            // ZOOMED OUT BACKGROUND
+            const bgZoomWidth = canvas.width * 2.2; // Extra width for zoom-out feel
+            const bgZoomHeight = canvas.height * 2.0;
+            let bgOffset = -(newtonX * 0.5) - 500; 
+            ctx.drawImage(backgroundImg, bgOffset, -250, bgZoomWidth, bgZoomHeight);
 
             if (deathTimer === 0) {
-                if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-                if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
+                if (keys.left && newtonX > L_LIMIT) newtonX -= 12;
+                if (keys.right && newtonX < R_LIMIT - nW) newtonX += 12;
             }
             
-            ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
+            // DRAW SMALLER NEWTON
+            ctx.drawImage(newtonImg, newtonX, 500 - nH - 10, nW, nH);
 
             appleY += speed;
+            // DRAW SMALLER APPLE
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 35 && appleX < newtonX + (nW - 35) && deathTimer === 0) {
+            // Catching logic for zoomed out scale
+            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 40) && appleX > newtonX + 25 && appleX < newtonX + (nW - 25) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
-                speed += 0.08;
+                speed += 0.07;
                 resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
                 if (isGolden) resetApple(); 
                 else { deathTimer = 30; }
             }
 
-            if (Math.random() < 0.007 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
+            if (Math.random() < 0.008 && deathTimer === 0) { 
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -80, s: 4 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
@@ -266,10 +266,11 @@
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
                 
-                if (bCX > newtonX + 45 && bCX < newtonX + (nW - 45) &&
-                    bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
-                    for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
-                    shake = 32;
+                // Tight collision for smaller bomb
+                if (bCX > newtonX + 35 && bCX < newtonX + (nW - 35) &&
+                    bCY > (500 - nH - 5) && bCY < 490 && deathTimer === 0) {
+                    for(let j=0; j<15; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
+                    shake = 25;
                     deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
@@ -277,7 +278,7 @@
 
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
             drawWoodScore();
-            ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
+            ctx.drawImage(borderImg, -10, -10, canvas.width+20, canvas.height+20);
             requestAnimationFrame(gameLoop);
         }
 
@@ -303,10 +304,4 @@
         handleMove('rightBtn', 'right', 'pressed-red');
 
         const pBtn = document.getElementById('pauseBtn');
-        const pPress = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
-        const pRelease = () => pBtn.classList.remove('pressed-orange');
-        pBtn.addEventListener('touchstart', pPress); pBtn.addEventListener('touchend', pRelease);
-        pBtn.addEventListener('mousedown', pPress); pBtn.addEventListener('mouseup', pRelease);
-    </script>
-</body>
-</html>
+        const pPress = (e) => { e.preventDefault(); pBtn.classList.
