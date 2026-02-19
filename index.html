@@ -45,7 +45,6 @@
 
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
-            /* MOVED UP: Increased bottom padding to 60px to push Try Again button higher */
             padding: 10px 10px 60px 10px; 
             border-top: 4px solid #ffe066;
             z-index: 10;
@@ -169,7 +168,8 @@
         function drawWoodScore() {
             ctx.save();
             ctx.fillStyle = "rgba(0,0,0,0.6)"; 
-            ctx.fillRect(canvas.width/2-80, 20, 160, 50);
+            // SCORE BOARD WIDTH: 160 + 80 = 240. X adjusted to keep it centered.
+            ctx.fillRect(canvas.width/2-120, 20, 240, 50);
             ctx.fillStyle = "#fff"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, canvas.width/2, 55);
             ctx.restore();
@@ -207,7 +207,6 @@
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // GAME OVER WIDENED: Scale horizontal by 1.4 to make it wider/less thin
                 ctx.save();
                 ctx.translate(canvas.width/2, 280);
                 ctx.scale(1.4, 1); 
@@ -230,13 +229,13 @@
                 if (keys.right && newtonX < R_LIMIT - 260) newtonX += 15;
             }
             
-            // NEWTON WIDENED: Changed width from 140 to 200 to stretch him horizontally
             ctx.drawImage(newtonImg, newtonX, 320, 280, 160);
 
             appleY += speed;
-            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 30, appleY - 30, 60, 60);
+            // APPLE WIDTH: 60 + 80 = 140. Offset adjusted from -30 to -70 to center.
+            ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 70, appleY - 30, 140, 60);
 
-            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 280 && deathTimer === 0) {
+            if (appleY > 340 && appleY < 460 && appleX > newtonX - 40 && appleX < newtonX + 320 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
                 resetApple();
@@ -246,7 +245,8 @@
             }
 
             if (Math.random() < 0.012 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-60), y: -60, s: 7 + Math.random()*3 });
+                // BOMB SPEED: Reduced from 7+3 to 3+2 for a solid decrease
+                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-60), y: -60, s: 3 + Math.random()*2 });
             }
             
             for (let i = bombs.length-1; i>=0; i--) {
