@@ -21,11 +21,10 @@
             flex-direction: column;
         }
         
-        /* THE STRETCH: Forced wide aspect ratio to prevent the "ugly" squish */
         canvas { 
             display: block; 
             margin: 0; 
-            width: 100vw; /* Stretch to full phone width */
+            width: 100vw; 
             height: auto;
             flex-grow: 1; 
             background: #1a3c1a; 
@@ -44,10 +43,9 @@
             text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); margin: 0;
         }
 
-        /* UI AREA: Lifted up slightly to avoid phone home buttons */
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
-            padding: 10px 10px 40px 10px; /* Extra bottom padding for phone nav bars */
+            padding: 10px 10px 40px 10px; 
             border-top: 4px solid #ffe066;
             z-index: 10;
         }
@@ -100,7 +98,7 @@
         <button id="playBtn" class="main-btn">PLAY START</button>
     </div>
 
-    <canvas id="game" width="1000" height="700"></canvas>
+    <canvas id="game" width="1000" height="500"></canvas>
 
     <div id="mobile-ui">
         <div id="control-lane">
@@ -132,9 +130,8 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // WIDER COORDINATES FOR 1000px WIDTH
         let newtonX = 425; let appleX = 500; let appleY = 0;
-        let score = 0; let speed = 5.5;
+        let score = 0; let speed = 5.5; // RESTORED SPEED
         let gameOver = false; let isGolden = false;
         let shake = 0; let deathTimer = 0;
         let bombs = []; let particles = [];
@@ -209,7 +206,7 @@
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", canvas.width/2, 350);
+                ctx.fillText("GAME OVER", canvas.width/2, 280);
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
@@ -218,31 +215,28 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 1. DRAW BACKGROUND (Stretched to 1000px)
             ctx.drawImage(backgroundImg, -22, -22, canvas.width+44, canvas.height+44);
 
             if (deathTimer === 0) {
-                if (keys.left && newtonX > L_LIMIT) newtonX -= 14;
-                if (keys.right && newtonX < R_LIMIT - 150) newtonX += 14;
+                if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
+                if (keys.right && newtonX < R_LIMIT - 140) newtonX += 15;
             }
             
-            // 2. DRAW NEWTON (Slightly wider to match stretch)
-            ctx.drawImage(newtonImg, newtonX, 480, 160, 180);
+            // NEWTON POSITIONED CORRECTLY FOR 500H
+            ctx.drawImage(newtonImg, newtonX, 320, 140, 160);
 
-            // 3. APPLES
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - 30, appleY - 30, 60, 60);
 
-            if (appleY > 500 && appleY < 620 && appleX > newtonX && appleX < newtonX + 160 && deathTimer === 0) {
+            if (appleY > 340 && appleY < 460 && appleX > newtonX && appleX < newtonX + 140 && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.07;
                 resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); else { deathTimer = 30; shake = 15; }
+                if (isGolden) resetApple(); 
+                else { deathTimer = 30; /* SHAKE REMOVED FOR APPLES */ }
             }
 
-            // 4. BOMBS
             if (Math.random() < 0.012 && deathTimer === 0) { 
                 bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-60), y: -60, s: 7 + Math.random()*3 });
             }
@@ -250,25 +244,20 @@
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, 60, 60);
-                if (bombs[i].x < newtonX + 130 && bombs[i].x + 60 > newtonX + 30 && bombs[i].y > 500 && bombs[i].y < 650 && deathTimer === 0) {
+                if (bombs[i].x < newtonX + 120 && bombs[i].x + 60 > newtonX + 20 && bombs[i].y > 340 && bombs[i].y < 480 && deathTimer === 0) {
                     for(let j=0; j<35; j++) particles.push(new Particle(bombs[i].x+30, bombs[i].y+30));
-                    shake = 35; deathTimer = 40;
+                    shake = 35; // SHAKE KEPT FOR BOMBS
+                    deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
 
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
-            
-            // 5. DRAW SCORE
             drawWoodScore();
-            
-            // 6. DRAW BORDER (On top but stretched)
             ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
-            
             requestAnimationFrame(gameLoop);
         }
 
-        // --- BUTTON HANDLING ---
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
             const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
