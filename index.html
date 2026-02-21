@@ -200,7 +200,7 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
-        // --- KEYBOARD CONTROLS ---
+        // --- KEYBOARD CONTROLS (Always Enabled) ---
         window.addEventListener("keydown", (e) => {
             if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
             if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
@@ -322,6 +322,8 @@
 
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
+            // ❗ Added direct onclick for mouse clicks
+            el.onclick = (e) => { e.preventDefault(); callback(); };
             const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
             const release = () => el.classList.remove('pressed');
             el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
@@ -334,6 +336,7 @@
             const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
             el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
             el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
+            el.addEventListener('mouseleave', stop); // Stop moving if mouse leaves button
         };
 
         handleMainBtn('playBtn', startGame);
