@@ -31,34 +31,41 @@
             image-rendering: auto;
         }
 
-        /* CIRCULAR TOP RIGHT BUTTONS */
+        /* MINI CIRCULAR TOP RIGHT BUTTONS */
         .top-btn {
             position: fixed;
-            width: 50px;
-            height: 50px;
-            border: 3px solid #ffe066;
-            border-radius: 50%; /* Makes them circular */
+            width: 35px;  /* Made smaller */
+            height: 35px; /* Made smaller */
+            border: 2px solid #ffe066;
+            border-radius: 50%;
             color: white;
-            font-size: 20px;
+            font-size: 16px; /* Adjusted icon size */
             z-index: 2000;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 0 #1B5E20;
+            box-shadow: 0 3px 0 #1B5E20;
+        }
+
+        #skinBtn {
+            top: 10px;
+            right: 100px; /* Compact spacing */
+            background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%);
+            box-shadow: 0 3px 0 #4a148c;
         }
 
         #bgSwitchBtn {
-            top: 15px;
-            right: 75px; /* Positioned next to mute */
+            top: 10px;
+            right: 55px; 
             background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%);
         }
 
         #muteBtn {
-            top: 15px;
-            right: 15px;
+            top: 10px;
+            right: 10px;
             background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%);
-            box-shadow: 0 4px 0 #0d47a1;
+            box-shadow: 0 3px 0 #0d47a1;
         }
 
         #startOverlay {
@@ -122,8 +129,9 @@
 </head>
 
 <body>
-    <div id="bgSwitchBtn" class="top-btn">🖼️</div>
-    <div id="muteBtn" class="top-btn">🔊</div>
+    <div id="skinBtn" class="top-btn" title="Change Skin">👕</div>
+    <div id="bgSwitchBtn" class="top-btn" title="Change Background">🖼️</div>
+    <div id="muteBtn" class="top-btn" title="Mute/Unmute">🔊</div>
 
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
@@ -153,7 +161,12 @@
         const bg2 = new Image(); bg2.src = 'background2.png';
         let currentBG = bg1;
 
-        const newtonImg = new Image(); newtonImg.src = 'newton.png';
+        // SKIN SETUP
+        const skin0 = new Image(); skin0.src = 'newton.png';
+        const skin1 = new Image(); skin1.src = 'newtonskin1.png';
+        const skins = [skin0, skin1];
+        let currentSkinIndex = 0;
+
         const bombImg = new Image(); bombImg.src = 'bomb.png';
         const appleImg = new Image(); appleImg.src = 'apple.png';
         const goldenAppleImg = new Image(); goldenAppleImg.src = 'goldenapple.png';
@@ -177,6 +190,11 @@
         let bombs = []; let particles = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
+
+        // Skin Switch Logic
+        document.getElementById('skinBtn').onclick = () => {
+            currentSkinIndex = (currentSkinIndex + 1) % skins.length;
+        };
 
         // Background Change logic
         document.getElementById('bgSwitchBtn').onclick = () => {
@@ -232,21 +250,6 @@
             ctx.restore();
         }
 
-        class Particle {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.size = Math.random() * 7 + 3;
-                this.speedX = (Math.random() - 0.5) * 13;
-                this.speedY = (Math.random() - 0.5) * 13;
-                this.alpha = 1;
-            }
-            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.045; }
-            draw() {
-                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = "#ffaa00";
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
-            }
-        }
-
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
             if (deathTimer > 0) { deathTimer--; if (deathTimer === 0) gameOver = true; }
@@ -270,7 +273,9 @@
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
             
-            ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
+            // DRAW ACTIVE SKIN
+            ctx.drawImage(skins[currentSkinIndex], newtonX, 500 - nH - 20, nW, nH);
+            
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
@@ -290,18 +295,17 @@
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
                 if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
-                    for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
                     shake = 32; deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
 
-            particles.forEach((p, i) => { p.update(); p.draw(); if(p.alpha <= 0) particles.splice(i,1); });
             drawWoodenBoard();
             ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
             requestAnimationFrame(gameLoop);
         }
 
+        // CONTROL HANDLERS (Same as before)
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
             const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
