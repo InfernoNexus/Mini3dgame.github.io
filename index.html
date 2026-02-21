@@ -31,16 +31,13 @@
             image-rendering: auto;
         }
 
-        /* NEW BACKGROUND SWITCH BUTTON */
-        #bgSwitchBtn {
+        /* CIRCULAR TOP RIGHT BUTTONS */
+        .top-btn {
             position: fixed;
-            top: 15px;
-            right: 15px;
             width: 50px;
             height: 50px;
-            background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%);
             border: 3px solid #ffe066;
-            border-radius: 12px;
+            border-radius: 50%; /* Makes them circular */
             color: white;
             font-size: 20px;
             z-index: 2000;
@@ -49,6 +46,19 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 0 #1B5E20;
+        }
+
+        #bgSwitchBtn {
+            top: 15px;
+            right: 75px; /* Positioned next to mute */
+            background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%);
+        }
+
+        #muteBtn {
+            top: 15px;
+            right: 15px;
+            background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%);
+            box-shadow: 0 4px 0 #0d47a1;
         }
 
         #startOverlay {
@@ -112,7 +122,8 @@
 </head>
 
 <body>
-    <div id="bgSwitchBtn">🖼️</div>
+    <div id="bgSwitchBtn" class="top-btn">🖼️</div>
+    <div id="muteBtn" class="top-btn">🔊</div>
 
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
@@ -138,8 +149,6 @@
         const ctx = canvas.getContext("2d");
         
         const borderImg = new Image(); borderImg.src = 'border.png';
-        
-        // Background Management
         const bg1 = new Image(); bg1.src = 'background.png';
         const bg2 = new Image(); bg2.src = 'background2.png';
         let currentBG = bg1;
@@ -151,6 +160,7 @@
 
         const bgMusic = new Audio('background_music.mp3');
         bgMusic.loop = true; bgMusic.volume = 0.4;
+        let isMuted = false;
 
         let gameState = 'HOME';
         let isPaused = false;
@@ -168,11 +178,17 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
-        // Change Background function
+        // Background Change logic
         document.getElementById('bgSwitchBtn').onclick = () => {
             currentBG = (currentBG === bg1) ? bg2 : bg1;
-            // Also update the home screen overlay background
             document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
+        };
+
+        // Mute logic
+        document.getElementById('muteBtn').onclick = () => {
+            isMuted = !isMuted;
+            bgMusic.muted = isMuted;
+            document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
         };
 
         function startGame() {
@@ -182,7 +198,7 @@
             document.getElementById('reset').style.visibility = 'hidden';
             document.getElementById('pauseBtn').innerText = "PAUSE";
             bgMusic.currentTime = 0;
-            bgMusic.play().catch(() => {});
+            if (!isMuted) bgMusic.play().catch(() => {});
             score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
             newtonX = 425; bombs = []; particles = [];
             resetApple();
@@ -193,7 +209,7 @@
             if (gameOver || gameState !== 'PLAYING') return;
             isPaused = !isPaused;
             document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE";
-            if (isPaused) { bgMusic.pause(); } else { bgMusic.play(); gameLoop(); }
+            if (isPaused) { bgMusic.pause(); } else if(!isMuted) { bgMusic.play(); gameLoop(); } else { gameLoop(); }
         }
 
         function resetApple() {
@@ -207,19 +223,11 @@
             const boardW = 400;
             const boardX = canvas.width/2 - boardW/2;
             let woodGrad = ctx.createLinearGradient(boardX, 15, boardX, 60);
-            woodGrad.addColorStop(0, '#8B4513'); 
-            woodGrad.addColorStop(0.5, '#A0522D'); 
-            woodGrad.addColorStop(1, '#5D2906'); 
-            ctx.fillStyle = woodGrad;
-            ctx.fillRect(boardX, 15, boardW, 45);
-            ctx.strokeStyle = "#3e1d08"; 
-            ctx.lineWidth = 6;
-            ctx.strokeRect(boardX, 15, boardW, 45);
-            ctx.fillStyle = "#ffe066"; 
-            ctx.font = "28px Luckiest Guy"; 
-            ctx.textAlign = "center";
-            ctx.shadowColor = "rgba(0,0,0,0.5)";
-            ctx.shadowBlur = 4;
+            woodGrad.addColorStop(0, '#8B4513'); woodGrad.addColorStop(0.5, '#A0522D'); woodGrad.addColorStop(1, '#5D2906'); 
+            ctx.fillStyle = woodGrad; ctx.fillRect(boardX, 15, boardW, 45);
+            ctx.strokeStyle = "#3e1d08"; ctx.lineWidth = 6; ctx.strokeRect(boardX, 15, boardW, 45);
+            ctx.fillStyle = "#ffe066"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
             ctx.fillText("SCORE: " + score, canvas.width/2, 48);
             ctx.restore();
         }
@@ -241,36 +249,19 @@
 
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
-
-            if (deathTimer > 0) {
-                deathTimer--;
-                if (deathTimer === 0) gameOver = true;
-            }
-
+            if (deathTimer > 0) { deathTimer--; if (deathTimer === 0) gameOver = true; }
             if (gameOver) {
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('newtonHighScore', highScore);
-                    document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
-                }
+                if (score > highScore) { highScore = score; localStorage.setItem('newtonHighScore', highScore); document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore; }
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.save();
-                ctx.translate(canvas.width/2, 280);
-                ctx.scale(1.8, 1); 
-                ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", 0, 0);
-                ctx.restore();
+                ctx.save(); ctx.translate(canvas.width/2, 280); ctx.scale(1.8, 1); ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 0, 0); ctx.restore();
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
 
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // USE THE CURRENT BG IMAGE
             let bgOffset = -(newtonX * 0.28); 
             ctx.drawImage(currentBG, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
 
@@ -284,12 +275,9 @@
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
-                score += isGolden ? 5 : 1; 
-                speed += 0.08;
-                resetApple();
+                score += isGolden ? 5 : 1; speed += 0.08; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); 
-                else { deathTimer = 30; }
+                if (isGolden) resetApple(); else { deathTimer = 30; }
             }
 
             if (Math.random() < 0.007 && deathTimer === 0) { 
@@ -301,11 +289,9 @@
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, iW, iH);
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
-                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) &&
-                    bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
+                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
                     for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
-                    shake = 32;
-                    deathTimer = 40;
+                    shake = 32; deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
