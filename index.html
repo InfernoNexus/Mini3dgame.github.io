@@ -31,6 +31,26 @@
             image-rendering: auto;
         }
 
+        /* MINI ROTATE BUTTON STYLE */
+        #rotateBtn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%);
+            border: 2px solid #ffe066;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #bc5100;
+        }
+
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-image: url('background.png'); background-position: center;
@@ -87,11 +107,13 @@
 
         .pressed { transform: translateY(4px) !important; box-shadow: 0 2px 0 #1B5E20 !important; }
         .pressed-red { transform: translateY(4px) !important; box-shadow: 0 2px 0 #550000 !important; }
-        .pressed-orange { transform: translateY(4px) !important; box-shadow: 0 1px 0 #bc5100 !important; }
+        .pressed-orange { transform: translateY(2px) !important; box-shadow: 0 1px 0 #bc5100 !important; }
     </style>
 </head>
 
 <body>
+    <div id="rotateBtn">🔄</div>
+
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
@@ -115,6 +137,20 @@
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         
+        // SCREEN ROTATION LOGIC
+        document.getElementById('rotateBtn').addEventListener('click', async () => {
+            try {
+                if (!document.fullscreenElement) {
+                    await document.documentElement.requestFullscreen();
+                }
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape');
+                }
+            } catch (err) {
+                console.log("Rotation/Fullscreen ignored by browser. Please tilt your phone manually!");
+            }
+        });
+
         const borderImg = new Image(); borderImg.src = 'border.png';
         const backgroundImg = new Image(); backgroundImg.src = 'background.png';
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
@@ -130,9 +166,8 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // WIDER SCALED SIZES (Width increased, height same)
-        const nW = 315; const nH = 144; // Newton W widened from 252
-        const iW = 85;  const iH = 50;  // Items W widened from 68
+        const nW = 315; const nH = 144; 
+        const iW = 85;  const iH = 50;  
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
@@ -171,30 +206,20 @@
 
         function drawWoodenBoard() {
             ctx.save();
-            // Draxtically wider wooden board (400px wide)
             const boardW = 400;
             const boardX = canvas.width/2 - boardW/2;
-            
-            // Plank Gradient
             let woodGrad = ctx.createLinearGradient(boardX, 15, boardX, 60);
-            woodGrad.addColorStop(0, '#8B4513'); // Saddle Brown
-            woodGrad.addColorStop(0.5, '#A0522D'); // Sienna
-            woodGrad.addColorStop(1, '#5D2906'); // Dark Bark
-            
+            woodGrad.addColorStop(0, '#8B4513');
+            woodGrad.addColorStop(0.5, '#A0522D');
+            woodGrad.addColorStop(1, '#5D2906');
             ctx.fillStyle = woodGrad;
             ctx.fillRect(boardX, 15, boardW, 45);
-            
-            // Border/Bark effect
             ctx.strokeStyle = "#3e1d08"; 
             ctx.lineWidth = 6;
             ctx.strokeRect(boardX, 15, boardW, 45);
-            
-            // Score Text
             ctx.fillStyle = "#ffe066"; 
             ctx.font = "28px Luckiest Guy"; 
             ctx.textAlign = "center";
-            ctx.shadowColor = "rgba(0,0,0,0.5)";
-            ctx.shadowBlur = 4;
             ctx.fillText("SCORE: " + score, canvas.width/2, 48);
             ctx.restore();
         }
@@ -216,37 +241,19 @@
 
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
-
-            if (deathTimer > 0) {
-                deathTimer--;
-                if (deathTimer === 0) gameOver = true;
-            }
-
+            if (deathTimer > 0) { deathTimer--; if (deathTimer === 0) gameOver = true; }
             if (gameOver) {
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('newtonHighScore', highScore);
-                    document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
-                }
+                if (score > highScore) { highScore = score; localStorage.setItem('newtonHighScore', highScore); document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore; }
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.save();
-                ctx.translate(canvas.width/2, 280);
-                ctx.scale(1.8, 1); 
-                ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", 0, 0);
-                ctx.restore();
-
+                ctx.save(); ctx.translate(canvas.width/2, 280); ctx.scale(1.8, 1); ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 0, 0); ctx.restore();
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
 
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             let bgOffset = -(newtonX * 0.28); 
             ctx.drawImage(backgroundImg, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
 
@@ -256,18 +263,13 @@
             }
             
             ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
-
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            // Catching logic adjusted for WIDER entities
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
-                score += isGolden ? 5 : 1; 
-                speed += 0.08;
-                resetApple();
+                score += isGolden ? 5 : 1; speed += 0.08; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); 
-                else { deathTimer = 30; }
+                if (isGolden) resetApple(); else { deathTimer = 30; }
             }
 
             if (Math.random() < 0.007 && deathTimer === 0) { 
@@ -277,16 +279,11 @@
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, iW, iH);
-                
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
-                
-                // Bomb hitbox adjusted for wider sprites
-                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) &&
-                    bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
+                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
                     for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
-                    shake = 32;
-                    deathTimer = 40;
+                    shake = 32; deathTimer = 40;
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
