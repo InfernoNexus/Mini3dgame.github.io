@@ -31,7 +31,6 @@
             image-rendering: auto;
         }
 
-        /* MINI CIRCULAR TOP RIGHT BUTTONS */
         .top-btn {
             position: fixed;
             width: 35px;  
@@ -136,24 +135,24 @@
     <script>
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
+        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+        // Hide mobile UI on laptop
+        if (!isMobile) {
+            document.getElementById("mobile-ui").style.display = "none";
+        }
 
         // --- PRELOADING SYSTEM ---
         const imageAssets = {
-            border: 'border.png',
-            bg1: 'background.png',
-            bg2: 'background2.png',
-            skin0: 'newton.png',
-            skin1: 'newtonskin1.png',
-            bomb: 'bomb.png',
-            apple: 'apple.png',
-            gApple: 'goldenapple.png'
+            border: 'border.png', bg1: 'background.png', bg2: 'background2.png',
+            skin0: 'newton.png', skin1: 'newtonskin1.png', bomb: 'bomb.png',
+            apple: 'apple.png', gApple: 'goldenapple.png'
         };
 
         const images = {};
         let loadedCount = 0;
         const totalAssets = Object.keys(imageAssets).length;
 
-        // Loop to load all images
         Object.entries(imageAssets).forEach(([name, src]) => {
             const img = new Image();
             img.src = src;
@@ -162,7 +161,6 @@
                 loadedCount++;
                 const progress = Math.floor((loadedCount / totalAssets) * 100);
                 document.getElementById('loadingText').innerText = `Preparing Forest... ${progress}%`;
-                
                 if (loadedCount === totalAssets) {
                     const btn = document.getElementById('playBtn');
                     btn.disabled = false;
@@ -201,6 +199,18 @@
         let bombs = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
+
+        // --- KEYBOARD CONTROLS ---
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+            if (e.code === "Space") togglePause();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+        });
 
         document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % skins.length; };
 
