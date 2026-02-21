@@ -26,7 +26,7 @@
             flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
-        /* --- 3D MINI BUTTONS (MADE SMALLER) --- */
+        /* --- 3D MINI BUTTONS (SMALLER) --- */
         .top-btn {
             position: fixed; width: 32px; height: 32px; border: 2px solid #ffe066;
             border-radius: 50%; color: white; font-size: 14px; z-index: 2000;
@@ -73,12 +73,9 @@
             position: relative; transition: all 0.1s;
         }
         
-        .main-btn:active, .pressed-btn { 
-            transform: translateY(4px); 
-            box-shadow: 0 2px 0 #1B5E20; 
-        }
+        .main-btn:active, .pressed-btn { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
 
-        /* --- LOADING SCREEN --- */
+        /* --- LOADING SCREEN (NEWTON REMOVED) --- */
         #gameLoader {
             position: fixed; inset: 0; z-index: 5000;
             background: url('loadingbackgroundscreen.png') no-repeat center center;
@@ -87,7 +84,7 @@
         }
 
         .pipeline-wrapper {
-            position: relative; width: 80%; max-width: 650px; height: 100px; margin-top: 50px;
+            position: relative; width: 80%; max-width: 650px; height: 60px; margin-top: 50px;
         }
 
         .log-container {
@@ -103,11 +100,6 @@
             background-size: 200% 100%; position: relative;
             box-shadow: 0 0 25px var(--magic-teal);
             animation: energy-flow 2s linear infinite;
-        }
-
-        .newton-rider {
-            position: absolute; left: 0%; top: -75px; width: 90px;
-            z-index: 10; animation: newton-bob 1.5s ease-in-out infinite;
         }
 
         /* --- MOBILE UI & 3D CONTROLS --- */
@@ -132,13 +124,9 @@
             color: white; font-size: 14px; transition: transform 0.05s, box-shadow 0.05s;
         }
 
-        .pressed { 
-            transform: translateY(6px) !important; 
-            box-shadow: 0 0px 0 #550000 !important; 
-        }
+        .pressed { transform: translateY(6px) !important; box-shadow: 0 0px 0 #550000 !important; }
 
         @keyframes energy-flow { from { background-position: 200% 0; } to { background-position: 0% 0; } }
-        @keyframes newton-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
         @keyframes pulse-gold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         @keyframes play-out { 0% { transform: scale(1); } 100% { transform: scale(1.2); opacity: 0; } }
     </style>
@@ -159,11 +147,8 @@
         <h1 class="forest-title" style="font-size: 40px; -webkit-text-fill-color: var(--magic-teal);">PREPARING...</h1>
         <div class="pipeline-wrapper">
             <div class="log-container"></div>
-            <div class="energy-channel" style="position: absolute; top: 30px; left: 40px; right: 40px; bottom: 30px; background: rgba(0,0,0,0.6); border-radius: 30px; overflow: hidden;">
+            <div class="energy-channel" style="position: absolute; top: 15px; left: 30px; right: 30px; bottom: 15px; background: rgba(0,0,0,0.6); border-radius: 30px; overflow: hidden;">
                 <div id="energyFill" class="energy-fill"></div>
-            </div>
-            <div id="loadingNewton" class="newton-rider">
-                <img src="newton.png" alt="Newton" style="width:100%;">
             </div>
         </div>
         <div id="loadStatus" style="margin-top:20px; color: var(--magic-teal);">0%</div>
@@ -209,7 +194,6 @@
                 loaded++;
                 let prog = (loaded / total) * 100;
                 document.getElementById('energyFill').style.width = prog + '%';
-                document.getElementById('loadingNewton').style.left = `calc(${prog}% - 45px)`;
                 document.getElementById('loadStatus').innerText = `${Math.floor(prog)}%`;
                 if (loaded === total) setTimeout(startGame, 800);
             };
@@ -244,11 +228,13 @@
             resetApple(); gameLoop();
         }
 
-        function triggerGameOver(exX, exY) {
+        function triggerGameOver(exX, exY, hitBomb = false) {
             if(gameOver) return;
             gameOver = true; shake = 35;
-            explosion.active = true; explosion.x = exX; explosion.y = exY; explosion.timer = 30;
-            if (!isMuted) { sfxBomb.currentTime = 0; sfxBomb.play(); }
+            if (hitBomb) {
+                explosion.active = true; explosion.x = exX; explosion.y = exY; explosion.timer = 30;
+                if (!isMuted) { sfxBomb.currentTime = 0; sfxBomb.play(); }
+            }
             bgMusic.pause();
             document.getElementById('reset').style.display = 'block';
             if (score > highScore) { 
@@ -264,72 +250,49 @@
 
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
-
             if (!gameOver) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
                 appleY += speed;
-
                 if (appleY > 330 && appleY < 410 && appleX > newtonX + 20 && appleX < newtonX + nW - 20) {
                     if (isGolden) { score += 5; if(!isMuted) sfxGolden.play(); } else { score += 1; if(!isMuted) sfxApple.play(); }
                     speed += 0.08; resetApple();
-                } else if (appleY > 480) { if (isGolden) resetApple(); else triggerGameOver(appleX, 450); }
-
+                } else if (appleY > 480) { if (isGolden) resetApple(); else triggerGameOver(appleX, 450, false); }
                 if (Math.random() < 0.007) bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
                 for (let i = bombs.length-1; i>=0; i--) {
                     bombs[i].y += bombs[i].s;
-                    if (bombs[i].x + 40 > newtonX && bombs[i].x < newtonX + nW - 40 && bombs[i].y > 350) triggerGameOver(bombs[i].x, bombs[i].y);
+                    if (bombs[i].x + 40 > newtonX && bombs[i].x < newtonX + nW - 40 && bombs[i].y > 350) triggerGameOver(bombs[i].x, bombs[i].y, true);
                     if (bombs[i].y > 500) bombs.splice(i,1);
                 }
             }
-
-            render();
-            requestAnimationFrame(gameLoop);
+            render(); requestAnimationFrame(gameLoop);
         }
 
         function render() {
             ctx.setTransform(1,0,0,1,0,0);
             ctx.clearRect(0,0,1000,500);
-
-            // Apply Shake Effect to Background and Entities
-            if (shake > 0) { 
-                ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); 
-                shake *= 0.9; if(shake < 0.1) shake = 0;
-            }
-
+            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
             let targetScroll = -(newtonX / R_LIMIT) * 300; bgScrollX += (targetScroll - bgScrollX) * 0.1;
             ctx.drawImage(currentBG, bgScrollX - 100, 0, 1300, 500);
             ctx.drawImage(skins[currentSkinIndex], newtonX, 340, nW, nH);
-            
             if (!gameOver) ctx.drawImage(isGolden ? images.gApple : images.apple, appleX-42, appleY, iW, iH);
             bombs.forEach(b => ctx.drawImage(images.bomb, b.x, b.y, iW, iH));
-            
             if (explosion.active) {
-                ctx.save();
-                ctx.font = `${80 + (30 - explosion.timer) * 3}px Arial`;
-                ctx.textAlign = "center";
-                ctx.fillText("💥", explosion.x, explosion.y);
-                ctx.restore();
+                ctx.save(); ctx.font = `${80 + (30 - explosion.timer) * 3}px Arial`; ctx.textAlign = "center";
+                ctx.fillText("💥", explosion.x, explosion.y); ctx.restore();
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
-
-            // SCORE BOARD
-            ctx.save();
-            ctx.setTransform(1,0,0,1,0,0); // Reset transform so score and border don't shake
+            ctx.save(); ctx.setTransform(1,0,0,1,0,0);
             ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.roundRect(410, 15, 180, 45, 10); ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, 500, 45); 
-            
             if (gameOver) {
                 ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,1000,500);
                 ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", 500, 250);
             }
-            
-            // DRAW BORDER LAST (Fixed Position)
-            ctx.drawImage(images.border, -30, -20, 1050, 555);
-            ctx.restore();
+            ctx.drawImage(images.border, -30, -20, 1050, 555); ctx.restore();
         }
 
         document.getElementById('playBtn').onclick = function() {
@@ -343,9 +306,8 @@
 
         document.getElementById('reset').onclick = startGame;
         document.getElementById('skinBtn').onclick = () => currentSkinIndex = (currentSkinIndex + 1) % 2;
-        document.getElementById('bgSwitchBtn').onclick = () => { currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1; };
+        document.getElementById('bgSwitchBtn').onclick = () => currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1;
         document.getElementById('muteBtn').onclick = () => { isMuted = !isMuted; if(bgMusic) bgMusic.muted = isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊"; };
-        
         const handleMove = (id, k) => {
             const btn = document.getElementById(id);
             const start = (e) => { e.preventDefault(); if(!gameOver) keys[k] = true; btn.classList.add('pressed'); };
@@ -354,14 +316,10 @@
             btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
-        
         document.getElementById('pauseBtn').onclick = function() {
             if(gameOver) return;
-            this.classList.add('pressed');
-            setTimeout(() => this.classList.remove('pressed'), 100);
-            isPaused = !isPaused; 
-            this.innerText = isPaused ? "RESUME" : "PAUSE"; 
-            if (!isPaused) gameLoop(); 
+            this.classList.add('pressed'); setTimeout(() => this.classList.remove('pressed'), 100);
+            isPaused = !isPaused; this.innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) gameLoop(); 
         };
     </script>
 </body>
