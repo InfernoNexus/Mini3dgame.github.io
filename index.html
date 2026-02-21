@@ -178,8 +178,14 @@
             currentBG = images.bg1;
         }
 
+        // --- AUDIO SYSTEM ---
         const bgMusic = new Audio('background_music.mp3');
         bgMusic.loop = true; bgMusic.volume = 0.4;
+        
+        const sfxApple = new Audio('apple.mp3');
+        const sfxGolden = new Audio('goldenapple.mp3');
+        const sfxBomb = new Audio('bomb.mp3');
+
         let isMuted = false;
         let currentSkinIndex = 0;
 
@@ -199,7 +205,6 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
-        // Parallax variables
         let bgScrollX = 0;
 
         // --- KEYBOARD CONTROLS ---
@@ -224,8 +229,18 @@
         document.getElementById('muteBtn').onclick = () => {
             isMuted = !isMuted;
             bgMusic.muted = isMuted;
+            sfxApple.muted = isMuted;
+            sfxGolden.muted = isMuted;
+            sfxBomb.muted = isMuted;
             document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
         };
+
+        function playSFX(audio) {
+            if (!isMuted) {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+            }
+        }
 
         function startGame() {
             gameState = 'PLAYING';
@@ -284,12 +299,8 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // --- ENHANCED PARALLAX LOGIC ---
-            // Calculate where the background should be based on Newton's X
-            // We use a wider draw area (canvas.width * 1.5) to match the "Cover" feel
             let targetScroll = -(newtonX / R_LIMIT) * (canvas.width * 0.3); 
-            bgScrollX += (targetScroll - bgScrollX) * 0.1; // Smooth interpolation (lerp)
-            
+            bgScrollX += (targetScroll - bgScrollX) * 0.1;
             ctx.drawImage(currentBG, bgScrollX - 100, 0, canvas.width * 1.3, canvas.height);
 
             if (deathTimer === 0) {
@@ -303,9 +314,10 @@
             ctx.drawImage(isGolden ? images.gApple : images.apple, appleX - (iW/2), appleY, iW, iH);
 
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
-                score += isGolden ? 5 : 1; speed += 0.08; resetApple();
+                if (isGolden) { score += 5; playSFX(sfxGolden); } else { score += 1; playSFX(sfxApple); }
+                speed += 0.08; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); else { deathTimer = 30; }
+                if (isGolden) resetApple(); else { deathTimer = 30; playSFX(sfxBomb); } // Missing apple death sound
             }
 
             if (Math.random() < 0.007 && deathTimer === 0) { 
@@ -319,6 +331,7 @@
                 const bCY = bombs[i].y + (iH/2);
                 if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
                     shake = 32; deathTimer = 40;
+                    playSFX(sfxBomb);
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
