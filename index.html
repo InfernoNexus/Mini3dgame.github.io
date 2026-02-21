@@ -1,330 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Newton Forest Adventure</title>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton and Gravity</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+        /* --- 1. THE 3D LOADING SCREEN --- */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #5b42f3;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; transition: opacity 0.8s ease;
+        }
+        .loading-card {
+            background: #f0f0f0; padding: 40px; border-radius: 30px;
+            width: 320px; box-shadow: 15px 15px 30px rgba(0,0,0,0.2);
+            position: relative; text-align: center;
+        }
+        .loading-text { font-family: 'Arial Black', sans-serif; color: #d1d1d1; letter-spacing: 4px; font-size: 20px; text-shadow: 1px 1px white; margin: 0; }
+        .progress-container {
+            background: #d1d1d1; height: 30px; border-radius: 15px; margin-top: 25px;
+            position: relative; box-shadow: inset 4px 4px 8px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        #progress-bar { height: 100%; width: 0%; background: #7c5cfc; border-radius: 15px; transition: width 0.1s; }
 
+        /* --- 2. THE UNIQUE TITLE SCREEN --- */
         body { 
-            margin: 0; text-align: center; font-family: 'Luckiest Guy', cursive; 
-            background: #0d1f0d; overflow: hidden; touch-action: none; 
-            user-select: none; -webkit-user-select: none; height: 100vh;
-            display: flex; flex-direction: column;
+            margin: 0; background: #87CEEB; font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
         }
         
-        canvas { 
-            display: block; margin: 0; width: 100vw; height: auto;
-            flex-grow: 1; background: #1a3c1a; image-rendering: auto;
+        #home-screen { text-align: center; z-index: 10; }
+
+        .game-title {
+            font-family: 'Arial Black', sans-serif; font-size: 55px;
+            background: linear-gradient(to bottom, #ff5f56, #b71c1c);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(4px 4px 0px #3e2723);
+            margin: 0; animation: titleSway 3s ease-in-out infinite;
         }
 
-        .top-btn {
-            position: fixed; width: 35px; height: 35px; border: 2px solid #ffe066;
-            border-radius: 50%; color: white; font-size: 16px; z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 0 3px 0 #1B5E20;
+        @keyframes titleSway { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-15px) rotate(1deg); } }
+
+        .btn-start {
+            margin-top: 30px; padding: 15px 40px; font-size: 24px; font-weight: bold;
+            color: white; background: #7c5cfc; border: none; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 10px 0 #5b42f3; transition: 0.1s;
         }
+        .btn-start:active { transform: translateY(5px); box-shadow: 0 5px 0 #5b42f3; }
 
-        #skinBtn { top: 10px; right: 100px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 3px 0 #4a148c; }
-        #bgSwitchBtn { top: 10px; right: 55px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
-        #muteBtn { top: 10px; right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
-
-        #startOverlay, #gameLoader {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-position: center; background-repeat: no-repeat; background-size: cover;
-            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        /* --- 3. THE GAME STAGE --- */
+        #game-canvas { 
+            display: none; border: 10px solid #3e2723; border-radius: 20px; 
+            background: linear-gradient(#87CEEB, #e0f7fa); box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
-
-        #startOverlay { background-image: url('background.png'); }
-        
-        #gameLoader { 
-            background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('background.png'); 
-            display: none; z-index: 1100; 
-        }
-
-        .forest-title {
-            font-size: 65px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); margin: 0;
-            line-height: 0.9;
-        }
-
-        #mobile-ui {
-            background: linear-gradient(to top, #000, #1a3c1a);
-            padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
-        }
-
-        #control-lane { display: flex; justify-content: space-around; align-items: center; max-width: 600px; margin: 0 auto 15px auto; }
-
-        #leftBtn, #rightBtn {
-            width: 85px; height: 85px; border-radius: 50%;
-            border: 4px solid #ffe066; color: white;
-            background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); 
-            box-shadow: 0 5px 0 #550000; font-size: 40px;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        #pauseBtn { 
-            width: 75px; height: 75px; border-radius: 50%;
-            border: 3px solid #ffe066; color: white;
-            background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
-            box-shadow: 0 5px 0 #bc5100; font-size: 14px; 
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .main-btn {
-            font-family: 'Luckiest Guy', cursive;
-            font-size: 32px; padding: 15px 50px; border-radius: 50px;
-            border: 4px solid #ffe066; color: white; cursor: pointer;
-            background: linear-gradient(#4CAF50, #2E7D32);
-            box-shadow: 0 6px 0 #1B5E20; outline: none;
-        }
-
-        #reset { display: none; } /* Strictly hidden until Game Over */
-
-        .loader-msg { color: #ffe066; font-size: 22px; margin-top: 20px; text-shadow: 2px 2px 4px #000; }
-        
-        .spinner {
-            width: 60px; height: 60px; border: 6px solid #ffe066;
-            border-top: 6px solid transparent; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
-    <div id="skinBtn" class="top-btn">👕</div>
-    <div id="bgSwitchBtn" class="top-btn">🖼️</div>
-    <div id="muteBtn" class="top-btn">🔊</div>
 
-    <div id="startOverlay">
-        <h1 class="forest-title">NEWTON<br>GRAVITY</h1>
-        <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
-        <button id="playBtn" class="main-btn">PLAY</button>
-    </div>
-
-    <div id="gameLoader">
-        <div class="spinner"></div>
-        <div id="loadStatus" class="loader-msg">Loading Forest Assets... 0%</div>
-    </div>
-
-    <canvas id="game" width="1000" height="500"></canvas>
-
-    <div id="mobile-ui">
-        <div id="control-lane">
-            <button id="leftBtn">◀</button>
-            <button id="pauseBtn">PAUSE</button>
-            <button id="rightBtn">▶</button>
-        </div>
-        <div id="reset-lane" style="height: 70px; display: flex; justify-content: center; align-items: center;">
-            <button id="reset" class="main-btn">TRY AGAIN</button>
+    <div id="loading-screen">
+        <div class="loading-card">
+            <h1 class="loading-text">LOADING</h1>
+            <div class="progress-container"><div id="progress-bar"></div></div>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById("game");
-        const ctx = canvas.getContext("2d");
-        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-        if (!isMobile) document.getElementById("mobile-ui").style.display = "none";
+    <div id="home-screen">
+        <h1 class="game-title">Newton and Gravity</h1>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+    </div>
 
-        let images = {}, skins = [], currentBG;
-        let bgMusic, sfxApple, sfxGolden, sfxBomb;
-        let assetsReady = false;
+    <canvas id="game-canvas" width="400" height="500"></canvas>
 
-        const imageAssets = {
-            border: 'border.png', bg1: 'background.png', bg2: 'background2.png',
-            skin0: 'newton.png', skin1: 'newtonskin1.png', bomb: 'bomb.png',
-            apple: 'apple.png', gApple: 'goldenapple.png'
-        };
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const homeScreen = document.getElementById('home-screen');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingScreen = document.getElementById('loading-screen');
 
-        function preloadEverything() {
-            let loaded = 0;
-            const total = Object.keys(imageAssets).length + 4;
+    let score = 0, lives = 3, gameActive = false;
+    let apple = { x: 200, y: -20, speed: 4 };
+    let newton = { x: 170, y: 400, width: 60 };
+    let breeze = 0;
 
-            const updateProgress = () => {
-                loaded++;
-                let prog = Math.floor((loaded / total) * 100);
-                document.getElementById('loadStatus').innerText = `Preparing Forest... ${prog}%`;
-                if (loaded === total) {
-                    assetsReady = true;
-                    setTimeout(startGame, 800); 
-                }
-            };
+    // Loading Logic
+    let progress = 0;
+    const loadInt = setInterval(() => {
+        progress += 5;
+        progressBar.style.width = progress + '%';
+        if (progress >= 100) {
+            clearInterval(loadInt);
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => loadingScreen.style.display = 'none', 800);
+        }
+    }, 50);
 
-            Object.entries(imageAssets).forEach(([name, src]) => {
-                images[name] = new Image();
-                images[name].src = src;
-                images[name].onload = updateProgress;
-            });
+    function startGame() {
+        homeScreen.style.display = 'none';
+        canvas.style.display = 'block';
+        gameActive = true;
+        update();
+    }
 
-            bgMusic = new Audio('background_music.mp3'); bgMusic.oncanplaythrough = updateProgress; bgMusic.loop = true;
-            sfxApple = new Audio('apple.mp3'); sfxApple.oncanplaythrough = updateProgress;
-            sfxGolden = new Audio('goldenapple.mp3'); sfxGolden.oncanplaythrough = updateProgress;
-            sfxBomb = new Audio('bomb.mp3'); sfxBomb.oncanplaythrough = updateProgress;
+    function drawTree() {
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(20, 300, 40, 200);
+        breeze += 0.03;
+        let sway = Math.sin(breeze) * 10;
+        ctx.fillStyle = '#2e7d32';
+        ctx.beginPath();
+        ctx.arc(40 + sway, 280, 50, 0, Math.PI*2);
+        ctx.arc(80 + sway, 250, 60, 0, Math.PI*2);
+        ctx.arc(10 + sway, 240, 50, 0, Math.PI*2);
+        ctx.fill();
+    }
+
+    function drawNewton() {
+        // Newton in Blue Outfit (Code-drawn for zero external files)
+        ctx.fillStyle = "#0d47a1"; // Blue coat
+        ctx.fillRect(newton.x, newton.y + 20, 60, 60);
+        ctx.fillStyle = "#ffccbc"; // Face
+        ctx.beginPath(); ctx.arc(newton.x + 30, newton.y + 10, 20, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "white"; // Wig
+        ctx.beginPath(); ctx.arc(newton.x + 10, newton.y + 10, 12, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(newton.x + 50, newton.y + 10, 12, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(newton.x + 30, newton.y - 5, 15, 0, Math.PI*2); ctx.fill();
+    }
+
+    function update() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        drawTree();
+        drawNewton();
+        
+        // Apple Logic
+        ctx.fillStyle = "red";
+        ctx.beginPath(); ctx.arc(apple.x, apple.y, 15, 0, Math.PI*2); ctx.fill();
+        apple.y += apple.speed;
+
+        if (apple.y > newton.y && apple.x > newton.x && apple.x < newton.x + 60) {
+            score++; resetApple();
+        } else if (apple.y > 500) {
+            lives--; resetApple();
         }
 
-        let gameState = 'HOME', isPaused = false, isMuted = false, highScore = localStorage.getItem('newtonHighScore') || 0;
-        document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
+        ctx.fillStyle = "#1b5e20";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Score: " + score, 300, 30);
+        ctx.fillText("Lives: " + lives, 300, 60);
 
-        const nW = 315, nH = 144, iW = 85, iH = 50;  
-        let newtonX = 425, appleX = 500, appleY = 0, score = 0, speed = 5.5; 
-        let gameOver = false, isGolden = false, shake = 0, bombs = [];
-        let explosion = { active: false, x: 0, y: 0, timer: 0 };
-        const keys = { left: false, right: false }, L_LIMIT = 20, R_LIMIT = 980; 
-        let bgScrollX = 0, currentSkinIndex = 0;
+        if (lives > 0) requestAnimationFrame(update);
+        else alert("Game Over! Score: " + score);
+    }
 
-        function startGame() {
-            document.getElementById('gameLoader').style.display = 'none';
-            document.getElementById('reset').style.display = 'none';
-            skins = [images.skin0, images.skin1];
-            currentBG = currentBG || images.bg1;
-            gameState = 'PLAYING';
-            gameOver = false;
-            if (!isMuted) { bgMusic.volume = 0.4; bgMusic.play().catch(()=>{}); }
-            score = 0; speed = 5.5;
-            newtonX = 425; bombs = []; explosion.active = false;
-            resetApple(); gameLoop();
-        }
+    function resetApple() {
+        apple.y = -20;
+        apple.x = Math.random() * 300 + 50;
+        apple.speed += 0.2;
+    }
 
-        function triggerGameOver(exX, exY) {
-            gameOver = true;
-            shake = 35;
-            explosion.active = true; explosion.x = exX; explosion.y = exY; explosion.timer = 30;
-            playSFX(sfxBomb);
-            bgMusic.pause();
-            document.getElementById('reset').style.display = 'block';
-            
-            if (score > highScore) { 
-                highScore = score; 
-                localStorage.setItem('newtonHighScore', highScore); 
-                document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
-            }
-        }
-
-        function resetApple() {
-            appleY = -100; appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
-            isGolden = Math.random() < 0.15;
-        }
-
-        function playSFX(audio) { if (!isMuted && audio) { audio.currentTime = 0; audio.play().catch(()=>{}); } }
-
-        function gameLoop() {
-            if (gameState !== 'PLAYING' || isPaused) return;
-            
-            if (gameOver) {
-                // Keep drawing the last frame + explosion
-                renderFrame();
-                ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", 500, 250);
-                return;
-            }
-
-            // Game Logic
-            if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
-            if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
-            
-            appleY += speed;
-
-            // Collision: Newton catches apple
-            if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20)) {
-                if (isGolden) { score += 5; playSFX(sfxGolden); } else { score += 1; playSFX(sfxApple); }
-                speed += 0.08; resetApple();
-            } 
-            // Collision: Apple hits floor
-            else if (appleY > canvas.height) {
-                if (isGolden) resetApple(); else triggerGameOver(appleX, 450);
-            }
-
-            // Bomb Spawning
-            if (Math.random() < 0.007) bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
-            
-            // Bomb Movement & Collision
-            for (let i = bombs.length-1; i>=0; i--) {
-                bombs[i].y += bombs[i].s;
-                if (bombs[i].x + iW/2 > newtonX + 40 && bombs[i].x + iW/2 < newtonX + nW - 40 && bombs[i].y + iH/2 > 350) {
-                    triggerGameOver(bombs[i].x + iW/2, bombs[i].y + iH/2);
-                }
-                if (bombs[i].y > canvas.height) bombs.splice(i, 1);
-            }
-
-            renderFrame();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function renderFrame() {
-            ctx.setTransform(1,0,0,1,0,0);
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            let targetScroll = -(newtonX / R_LIMIT) * (canvas.width * 0.3); 
-            bgScrollX += (targetScroll - bgScrollX) * 0.1; 
-            ctx.drawImage(currentBG, bgScrollX - 100, 0, canvas.width * 1.3, canvas.height);
-
-            ctx.drawImage(skins[currentSkinIndex], newtonX, 500 - nH - 20, nW, nH);
-            
-            if (!gameOver) ctx.drawImage(isGolden ? images.gApple : images.apple, appleX - (iW/2), appleY, iW, iH);
-
-            bombs.forEach(b => ctx.drawImage(images.bomb, b.x, b.y, iW, iH));
-
-            if (explosion.active) {
-                ctx.font = `${80 + (30 - explosion.timer) * 3}px Arial`;
-                ctx.textAlign = "center"; ctx.fillText("💥", explosion.x, explosion.y);
-                explosion.timer--; if (explosion.timer <= 0) explosion.active = false;
-            }
-
-            drawBoard();
-            ctx.drawImage(images.border, -22, -22, 1044, 544);
-        }
-
-        function drawBoard() {
-            ctx.save();
-            ctx.fillStyle = "#5D2906"; ctx.fillRect(300, 15, 400, 45);
-            ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 3; ctx.strokeRect(300, 15, 400, 45);
-            ctx.fillStyle = "#ffe066"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, 500, 48); ctx.restore();
-        }
-
-        document.getElementById('playBtn').onclick = () => {
-            document.getElementById('startOverlay').style.display = 'none';
-            document.getElementById('gameLoader').style.display = 'flex';
-            preloadEverything();
-        };
-
-        document.getElementById('reset').onclick = startGame;
-        document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % 2; };
-        document.getElementById('bgSwitchBtn').onclick = () => {
-            currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1;
-            document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
-        };
-        document.getElementById('muteBtn').onclick = () => {
-            isMuted = !isMuted; if(bgMusic) bgMusic.muted = isMuted;
-            document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
-        };
-
-        const handleMove = (id, key) => {
-            const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('pressed'); };
-            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('pressed'); };
-            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
-            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
-        };
-        handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
-        document.getElementById('pauseBtn').onclick = () => {
-            isPaused = !isPaused;
-            document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE";
-            if (!isPaused) gameLoop();
-        };
-
-        window.addEventListener("keydown", (e) => {
-            if (e.code === "ArrowLeft") keys.left = true;
-            if (e.code === "ArrowRight") keys.right = true;
-        });
-        window.addEventListener("keyup", (e) => {
-            if (e.code === "ArrowLeft") keys.left = false;
-            if (e.code === "ArrowRight") keys.right = false;
-        });
-    </script>
+    window.addEventListener('keydown', (e) => {
+        if (e.key === "ArrowLeft" && newton.x > 0) newton.x -= 30;
+        if (e.key === "ArrowRight" && newton.x < 340) newton.x += 30;
+    });
+</script>
 </body>
 </html>
