@@ -11,6 +11,7 @@
             --magic-teal: #76ffeb;
             --deep-energy: #1de9b6;
             --log-brown: #3e2723;
+            --vibrant-gold: #ffd700;
         }
 
         body { 
@@ -25,6 +26,18 @@
             flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
+        /* --- MINI BUTTONS (Hidden by default) --- */
+        .top-btn {
+            position: fixed; width: 40px; height: 40px; border: 2px solid #ffe066;
+            border-radius: 50%; color: white; font-size: 18px; z-index: 2000;
+            display: none; align-items: center; justify-content: center; 
+            cursor: pointer; top: 5px; /* Attached to top */
+            box-shadow: 0 4px 0 #1B5E20;
+        }
+        #skinBtn { right: 110px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); }
+        #bgSwitchBtn { right: 60px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
+        #muteBtn { right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); }
+
         /* --- HOME SCREEN --- */
         #startOverlay {
             position: fixed; inset: 0;
@@ -35,16 +48,28 @@
         }
 
         .forest-title {
-            font-size: 58px; color: #4CAF50;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
-            margin: 0; line-height: 1.1; padding: 0 10px;
+            font-size: 65px; 
+            background: linear-gradient(to bottom, #ccff00 0%, #4CAF50 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(4px 4px 0px #1b5e20);
+            margin: 0; line-height: 1.0; padding: 0 10px;
+            text-align: center;
         }
 
-        /* --- LOADING PIPELINE --- */
+        .best-score-vibrant {
+            color: var(--vibrant-gold);
+            font-size: 28px;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 2px 2px 2px #000;
+            animation: pulse-gold 2s infinite;
+        }
+
+        /* --- LOADING SCREEN --- */
         #gameLoader {
             position: fixed; inset: 0; z-index: 5000;
             background: url('loadingbackgroundscreen.png') no-repeat center center;
-            background-size: cover; display: none; /* Shown via JS */
+            background-size: cover; display: none;
             flex-direction: column; align-items: center; justify-content: center;
         }
 
@@ -59,12 +84,6 @@
             overflow: hidden;
         }
 
-        .log-texture {
-            position: absolute; inset: 0;
-            background: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.1) 41px, rgba(0,0,0,0.1) 45px);
-            opacity: 0.4;
-        }
-
         .energy-channel {
             position: absolute; top: 30px; left: 40px; right: 40px; bottom: 30px;
             background: rgba(0,0,0,0.6); border-radius: 30px;
@@ -76,34 +95,17 @@
             background: linear-gradient(90deg, var(--deep-energy), var(--magic-teal), var(--deep-energy));
             background-size: 200% 100%; position: relative;
             box-shadow: 0 0 25px var(--magic-teal);
-            transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
             animation: energy-flow 2s linear infinite;
-        }
-
-        .swirl-overlay {
-            position: absolute; inset: 0;
-            background: repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.1) 10%, transparent 10%, transparent 20%);
-            mix-blend-mode: overlay; animation: swirl-move 3s linear infinite;
         }
 
         .newton-rider {
             position: absolute; left: 0%; top: -75px; width: 90px;
-            transition: left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
             z-index: 10; animation: newton-bob 1.5s ease-in-out infinite;
         }
 
         .newton-rider img { width: 100%; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
 
-        /* --- UI BUTTONS --- */
-        .top-btn {
-            position: fixed; width: 35px; height: 35px; border: 2px solid #ffe066;
-            border-radius: 50%; color: white; font-size: 16px; z-index: 2000;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-        #skinBtn { top: 10px; right: 100px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); }
-        #bgSwitchBtn { top: 10px; right: 55px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
-        #muteBtn { top: 10px; right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); }
-
+        /* --- GAME UI --- */
         .main-btn {
             font-family: 'Luckiest Guy', cursive; font-size: 32px; padding: 15px 50px; 
             border-radius: 50px; border: 4px solid #ffe066; color: white; cursor: pointer;
@@ -120,8 +122,11 @@
 
         /* --- ANIMATIONS --- */
         @keyframes energy-flow { from { background-position: 200% 0; } to { background-position: 0% 0; } }
-        @keyframes swirl-move { from { transform: translateX(-50px); } to { transform: translateX(50px); } }
         @keyframes newton-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+        @keyframes pulse-gold {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.05); filter: brightness(1.3); }
+        }
     </style>
 </head>
 
@@ -132,26 +137,22 @@
 
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br>AND<br>GRAVITY</h1>
-        <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0;">BEST: 0</div>
+        <div id="highScoreDisplay" class="best-score-vibrant">BEST: 0</div>
         <button id="playBtn" class="main-btn">PLAY</button>
     </div>
 
     <div id="gameLoader">
-        <h1 class="forest-title" style="color: var(--magic-teal);">LOADING...</h1>
+        <h1 class="forest-title" style="font-size: 40px; -webkit-text-fill-color: var(--magic-teal);">PREPARING...</h1>
         <div class="pipeline-wrapper">
-            <div class="log-container">
-                <div class="log-texture"></div>
-            </div>
+            <div class="log-container"></div>
             <div class="energy-channel">
-                <div id="energyFill" class="energy-fill">
-                    <div class="swirl-overlay"></div>
-                </div>
+                <div id="energyFill" class="energy-fill"></div>
             </div>
             <div id="loadingNewton" class="newton-rider">
                 <img src="newton.png" alt="Newton">
             </div>
         </div>
-        <div id="loadStatus" style="margin-top:20px; color: var(--magic-teal);">STARTING FOREST... 0%</div>
+        <div id="loadStatus" style="margin-top:20px; color: var(--magic-teal);">0%</div>
     </div>
 
     <canvas id="game" width="1000" height="500"></canvas>
@@ -181,16 +182,22 @@
             apple: 'apple.png', gApple: 'goldenapple.png'
         };
 
+        function showMiniButtons(show) {
+            const btns = document.querySelectorAll('.top-btn');
+            btns.forEach(b => b.style.display = show ? 'flex' : 'none');
+        }
+
         function preloadEverything() {
             let loaded = 0;
             const total = Object.keys(imageAssets).length + 4;
+            showMiniButtons(false); // Hide during loading
 
             const updateProgress = () => {
                 loaded++;
                 let prog = (loaded / total) * 100;
                 document.getElementById('energyFill').style.width = prog + '%';
                 document.getElementById('loadingNewton').style.left = `calc(${prog}% - 45px)`;
-                document.getElementById('loadStatus').innerText = `STARTING FOREST... ${Math.floor(prog)}%`;
+                document.getElementById('loadStatus').innerText = `${Math.floor(prog)}%`;
                 
                 if (loaded === total) {
                     setTimeout(startGame, 800);
@@ -221,6 +228,7 @@
         function startGame() {
             document.getElementById('gameLoader').style.display = 'none';
             document.getElementById('reset').style.display = 'none';
+            showMiniButtons(true); // Show during actual gameplay
             skins = [images.skin0, images.skin1];
             currentBG = currentBG || images.bg1;
             gameState = 'PLAYING';
@@ -288,14 +296,25 @@
             ctx.drawImage(skins[currentSkinIndex], newtonX, 340, nW, nH);
             if (!gameOver) ctx.drawImage(isGolden ? images.gApple : images.apple, appleX-42, appleY, iW, iH);
             bombs.forEach(b => ctx.drawImage(images.bomb, b.x, b.y, iW, iH));
+            
             if (explosion.active) {
                 ctx.font = `${80 + (30 - explosion.timer) * 3}px Arial`;
                 ctx.fillText("💥", explosion.x, explosion.y);
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
-            ctx.fillStyle = "#5D2906"; ctx.fillRect(350, 10, 300, 40);
-            ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, 500, 38);
+
+            // SCORE BOARD: Moved down and designed for visibility
+            ctx.save();
+            ctx.fillStyle = "rgba(93, 41, 6, 0.9)";
+            ctx.strokeStyle = "#ffe066";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(400, 60, 200, 45, 10); // Position 60 (Moved down)
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#ffe066"; ctx.font = "26px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, 500, 92);
+            ctx.restore();
+
             ctx.drawImage(images.border, -10, -10, 1020, 520);
         }
 
