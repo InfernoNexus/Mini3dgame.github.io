@@ -43,11 +43,12 @@
             display: none; z-index: 1100; 
         }
 
-        /* Updated Title Styling */
+        /* Updated Title Styling for "NEWTON AND GRAVITY" */
         .forest-title {
-            font-size: 65px; color: #4CAF50;
+            font-size: 58px; color: #4CAF50;
             text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(255,255,255,0.8); 
-            margin: 0; line-height: 0.95;
+            margin: 0; line-height: 1.1;
+            padding: 0 10px;
         }
 
         #mobile-ui {
@@ -102,7 +103,7 @@
     <div id="muteBtn" class="top-btn">🔊</div>
 
     <div id="startOverlay">
-        <h1 class="forest-title">NEWTON<br>GRAVITY</h1>
+        <h1 class="forest-title">NEWTON<br>AND<br>GRAVITY</h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
         <button id="playBtn" class="main-btn">PLAY</button>
     </div>
@@ -228,22 +229,18 @@
             
             appleY += speed;
 
-            // Collision: Catch apple
+            // Immediate Game Over if Newton catches bomb or misses apple
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20)) {
                 if (isGolden) { score += 5; playSFX(sfxGolden); } else { score += 1; playSFX(sfxApple); }
                 speed += 0.08; resetApple();
-            } 
-            // Collision: Floor
-            else if (appleY > canvas.height) {
+            } else if (appleY > canvas.height) {
                 if (isGolden) resetApple(); else triggerGameOver(appleX, 450);
             }
 
-            // Bomb Spawn
             if (Math.random() < 0.007) bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
-                // Immediate Game Over on Bomb impact
                 if (bombs[i].x + iW/2 > newtonX + 40 && bombs[i].x + iW/2 < newtonX + nW - 40 && bombs[i].y + iH/2 > 350) {
                     triggerGameOver(bombs[i].x + iW/2, bombs[i].y + iH/2);
                 }
