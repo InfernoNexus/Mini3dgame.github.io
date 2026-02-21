@@ -155,6 +155,14 @@
     <script>
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
+        // Detect mobile device
+const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+// If mobile → keep UI
+// If desktop → hide mobile UI
+if (!isMobile) {
+    document.getElementById("mobile-ui").style.display = "none";
+}
         
         const borderImg = new Image(); borderImg.src = 'border.png';
         const bg1 = new Image(); bg1.src = 'background.png';
@@ -190,6 +198,23 @@
         let bombs = []; let particles = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
+        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+if (!isMobile) {
+    document.getElementById("mobile-ui").style.display = "none";
+
+    // Keyboard controls for laptop
+    window.addEventListener("keydown", (e) => {
+        if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+        if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+        if (e.code === "Space") togglePause();
+    });
+
+    window.addEventListener("keyup", (e) => {
+        if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+        if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+    });
+}
 
         // Skin Switch Logic
         document.getElementById('skinBtn').onclick = () => {
@@ -306,21 +331,29 @@
         }
 
         // CONTROL HANDLERS (Same as before)
-        const handleMainBtn = (id, callback) => {
-            const el = document.getElementById(id);
-            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-            const release = () => el.classList.remove('pressed');
-            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
-            el.addEventListener('mousedown', press); el.addEventListener('mouseup', release);
-        };
+       const handleMainBtn = (id, callback) => {
+    const el = document.getElementById(id);
 
-        const handleMove = (id, key, animClass) => {
-            const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
-            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
-            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
-            el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
-        };
+    if (!isMobile) return; // ❌ Disable for desktop
+
+    const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
+    const release = () => el.classList.remove('pressed');
+
+    el.addEventListener('touchstart', press);
+    el.addEventListener('touchend', release);
+};
+
+      const handleMove = (id, key, animClass) => {
+    const el = document.getElementById(id);
+
+    if (!isMobile) return; // ❌ Disable for desktop
+
+    const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
+    const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
+
+    el.addEventListener('touchstart', start);
+    el.addEventListener('touchend', stop);
+};
 
         handleMainBtn('playBtn', startGame);
         handleMainBtn('reset', startGame);
