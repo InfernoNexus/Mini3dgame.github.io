@@ -158,10 +158,6 @@
         // Detect mobile device
 const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-// If mobile → keep UI
-// If desktop → hide mobile UI
-if (!isMobile) {
-    document.getElementById("mobile-ui").style.display = "none";
 }
         
         const borderImg = new Image(); borderImg.src = 'border.png';
