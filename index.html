@@ -205,6 +205,7 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
+        // Parallax variables
         let bgScrollX = 0;
 
         // --- KEYBOARD CONTROLS ---
@@ -299,8 +300,9 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // --- ENHANCED PARALLAX LOGIC (Matches Home Screen Width/Feel) ---
             let targetScroll = -(newtonX / R_LIMIT) * (canvas.width * 0.3); 
-            bgScrollX += (targetScroll - bgScrollX) * 0.1;
+            bgScrollX += (targetScroll - bgScrollX) * 0.1; 
             ctx.drawImage(currentBG, bgScrollX - 100, 0, canvas.width * 1.3, canvas.height);
 
             if (deathTimer === 0) {
@@ -313,17 +315,19 @@
             appleY += speed;
             ctx.drawImage(isGolden ? images.gApple : images.apple, appleX - (iW/2), appleY, iW, iH);
 
+            // COLLISION: CATCH APPLE
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
                 if (isGolden) { score += 5; playSFX(sfxGolden); } else { score += 1; playSFX(sfxApple); }
                 speed += 0.08; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); else { deathTimer = 30; playSFX(sfxBomb); } // Missing apple death sound
+                if (isGolden) resetApple(); else { deathTimer = 30; playSFX(sfxBomb); } 
             }
 
             if (Math.random() < 0.007 && deathTimer === 0) { 
                 bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             }
             
+            // BOMB LOGIC
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(images.bomb, bombs[i].x, bombs[i].y, iW, iH);
