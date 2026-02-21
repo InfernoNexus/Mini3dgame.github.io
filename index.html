@@ -8,54 +8,39 @@
         @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
 
         body { 
-            margin: 0; 
-            text-align: center; 
-            font-family: 'Luckiest Guy', cursive; 
-            background: #0d1f0d; 
-            overflow: hidden; 
-            touch-action: none; 
-            user-select: none; 
-            -webkit-user-select: none;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            margin: 0; text-align: center; font-family: 'Luckiest Guy', cursive; 
+            background: #0d1f0d; overflow: hidden; touch-action: none; 
+            user-select: none; -webkit-user-select: none; height: 100vh;
+            display: flex; flex-direction: column;
         }
         
         canvas { 
-            display: block; 
-            margin: 0; 
-            width: 100vw; 
-            height: auto;
-            flex-grow: 1; 
-            background: #1a3c1a; 
-            image-rendering: auto;
+            display: block; margin: 0; width: 100vw; height: auto;
+            flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
         .top-btn {
-            position: fixed;
-            width: 35px;  
-            height: 35px; 
-            border: 2px solid #ffe066;
-            border-radius: 50%;
-            color: white;
-            font-size: 16px; 
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 3px 0 #1B5E20;
+            position: fixed; width: 35px; height: 35px; border: 2px solid #ffe066;
+            border-radius: 50%; color: white; font-size: 16px; z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 3px 0 #1B5E20;
         }
 
         #skinBtn { top: 10px; right: 100px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 3px 0 #4a148c; }
         #bgSwitchBtn { top: 10px; right: 55px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
         #muteBtn { top: 10px; right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
 
-        #startOverlay {
+        #startOverlay, #gameLoader {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-image: url('background.png'); background-position: center;
-            background-repeat: no-repeat; background-size: cover;
+            background-position: center; background-repeat: no-repeat; background-size: cover;
             z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        #startOverlay { background-image: url('background.png'); }
+        
+        #gameLoader { 
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('background.png'); 
+            display: none; z-index: 1100; 
         }
 
         .forest-title {
@@ -65,9 +50,7 @@
 
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
-            padding: 10px 10px 60px 10px; 
-            border-top: 4px solid #ffe066;
-            z-index: 10;
+            padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
         }
 
         #control-lane { display: flex; justify-content: space-around; align-items: center; max-width: 600px; margin: 0 auto 15px auto; }
@@ -96,27 +79,37 @@
             box-shadow: 0 6px 0 #1B5E20; outline: none;
         }
 
-        #reset-lane { height: 70px; display: flex; justify-content: center; align-items: center; }
         #reset { visibility: hidden; }
 
         .pressed { transform: translateY(4px) !important; box-shadow: 0 2px 0 #1B5E20 !important; }
         .pressed-red { transform: translateY(4px) !important; box-shadow: 0 2px 0 #550000 !important; }
         .pressed-orange { transform: translateY(4px) !important; box-shadow: 0 1px 0 #bc5100 !important; }
 
-        #loadingText { color: #ffe066; font-size: 18px; margin-top: 15px; text-shadow: 2px 2px 4px #000; }
+        .loader-msg { color: #ffe066; font-size: 22px; margin-top: 20px; text-shadow: 2px 2px 4px #000; }
+        
+        .spinner {
+            width: 60px; height: 60px; border: 6px solid #ffe066;
+            border-top: 6px solid transparent; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
-    <div id="skinBtn" class="top-btn" title="Change Skin">👕</div>
-    <div id="bgSwitchBtn" class="top-btn" title="Change Background">🖼️</div>
-    <div id="muteBtn" class="top-btn" title="Mute/Unmute">🔊</div>
+    <div id="skinBtn" class="top-btn">👕</div>
+    <div id="bgSwitchBtn" class="top-btn">🖼️</div>
+    <div id="muteBtn" class="top-btn">🔊</div>
 
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
-        <button id="playBtn" class="main-btn" disabled>LOADING...</button>
-        <div id="loadingText">Gathering apples... 0%</div>
+        <button id="playBtn" class="main-btn">PLAY</button>
+    </div>
+
+    <div id="gameLoader">
+        <div class="spinner"></div>
+        <div id="loadStatus" class="loader-msg">Loading Forest Assets... 0%</div>
     </div>
 
     <canvas id="game" width="1000" height="500"></canvas>
@@ -127,7 +120,7 @@
             <button id="pauseBtn">PAUSE</button>
             <button id="rightBtn">▶</button>
         </div>
-        <div id="reset-lane">
+        <div id="reset-lane" style="height: 70px; display: flex; justify-content: center; align-items: center;">
             <button id="reset" class="main-btn">TRY AGAIN</button>
         </div>
     </div>
@@ -136,162 +129,87 @@
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
         const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+        if (!isMobile) document.getElementById("mobile-ui").style.display = "none";
 
-        if (!isMobile) {
-            document.getElementById("mobile-ui").style.display = "none";
-        }
+        let images = {}, skins = [], currentBG;
+        let bgMusic, sfxApple, sfxGolden, sfxBomb;
+        let assetsReady = false;
 
-        // --- PRELOADING SYSTEM ---
         const imageAssets = {
             border: 'border.png', bg1: 'background.png', bg2: 'background2.png',
             skin0: 'newton.png', skin1: 'newtonskin1.png', bomb: 'bomb.png',
             apple: 'apple.png', gApple: 'goldenapple.png'
         };
 
-        const images = {};
-        let loadedCount = 0;
-        const totalAssets = Object.keys(imageAssets).length;
+        function preloadEverything() {
+            let loaded = 0;
+            const total = Object.keys(imageAssets).length + 4; // Images + 4 Audios
 
-        Object.entries(imageAssets).forEach(([name, src]) => {
-            const img = new Image();
-            img.src = src;
-            img.onload = () => {
-                images[name] = img;
-                loadedCount++;
-                const progress = Math.floor((loadedCount / totalAssets) * 100);
-                document.getElementById('loadingText').innerText = `Gathering apples... ${progress}%`;
-                if (loadedCount === totalAssets) {
-                    const btn = document.getElementById('playBtn');
-                    btn.disabled = false;
-                    btn.innerText = "PLAY START";
-                    document.getElementById('loadingText').style.display = 'none';
-                    initGameAfterLoad();
+            const updateProgress = () => {
+                loaded++;
+                let prog = Math.floor((loaded / total) * 100);
+                document.getElementById('loadStatus').innerText = `Preparing Forest... ${prog}%`;
+                if (loaded === total) {
+                    assetsReady = true;
+                    setTimeout(startGame, 800); 
                 }
             };
-        });
 
-        let skins = [];
-        let currentBG;
+            // Load Images
+            Object.entries(imageAssets).forEach(([name, src]) => {
+                images[name] = new Image();
+                images[name].src = src;
+                images[name].onload = updateProgress;
+            });
 
-        function initGameAfterLoad() {
-            skins = [images.skin0, images.skin1];
-            currentBG = images.bg1;
+            // Load Audio
+            bgMusic = new Audio('background_music.mp3'); bgMusic.oncanplaythrough = updateProgress; bgMusic.loop = true;
+            sfxApple = new Audio('apple.mp3'); sfxApple.oncanplaythrough = updateProgress;
+            sfxGolden = new Audio('goldenapple.mp3'); sfxGolden.oncanplaythrough = updateProgress;
+            sfxBomb = new Audio('bomb.mp3'); sfxBomb.oncanplaythrough = updateProgress;
         }
 
-        // --- AUDIO SYSTEM ---
-        const bgMusic = new Audio('background_music.mp3');
-        bgMusic.loop = true; bgMusic.volume = 0.4;
-        
-        const sfxApple = new Audio('apple.mp3');
-        const sfxGolden = new Audio('goldenapple.mp3');
-        const sfxBomb = new Audio('bomb.mp3');
-
-        let isMuted = false;
-        let currentSkinIndex = 0;
-
-        let gameState = 'HOME';
-        let isPaused = false;
-        let highScore = localStorage.getItem('newtonHighScore') || 0;
+        let gameState = 'HOME', isPaused = false, isMuted = false, highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        const nW = 315; const nH = 144; 
-        const iW = 85;  const iH = 50;  
-
-        let newtonX = 425; let appleX = 500; let appleY = 0;
-        let score = 0; let speed = 5.5; 
-        let gameOver = false; let isGolden = false;
-        let shake = 0; let deathTimer = 0;
-        let bombs = [];
-        const keys = { left: false, right: false };
-        const L_LIMIT = 20; const R_LIMIT = 980; 
-
-        // Parallax variables
-        let bgScrollX = 0;
-
-        // --- KEYBOARD CONTROLS ---
-        window.addEventListener("keydown", (e) => {
-            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
-            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
-            if (e.code === "Space") togglePause();
-        });
-
-        window.addEventListener("keyup", (e) => {
-            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
-            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
-        });
-
-        document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % skins.length; };
-
-        document.getElementById('bgSwitchBtn').onclick = () => {
-            currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1;
-            document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
-        };
-
-        document.getElementById('muteBtn').onclick = () => {
-            isMuted = !isMuted;
-            bgMusic.muted = isMuted;
-            sfxApple.muted = isMuted;
-            sfxGolden.muted = isMuted;
-            sfxBomb.muted = isMuted;
-            document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
-        };
-
-        function playSFX(audio) {
-            if (!isMuted) {
-                audio.currentTime = 0;
-                audio.play().catch(() => {});
-            }
-        }
+        const nW = 315, nH = 144, iW = 85, iH = 50;  
+        let newtonX = 425, appleX = 500, appleY = 0, score = 0, speed = 5.5; 
+        let gameOver = false, isGolden = false, shake = 0, deathTimer = 0, bombs = [];
+        let explosion = { active: false, x: 0, y: 0, timer: 0 };
+        const keys = { left: false, right: false }, L_LIMIT = 20, R_LIMIT = 980; 
+        let bgScrollX = 0, currentSkinIndex = 0;
 
         function startGame() {
+            document.getElementById('gameLoader').style.display = 'none';
+            skins = [images.skin0, images.skin1];
+            currentBG = currentBG || images.bg1;
             gameState = 'PLAYING';
-            isPaused = false;
-            document.getElementById('startOverlay').style.display = 'none';
-            document.getElementById('reset').style.visibility = 'hidden';
-            document.getElementById('pauseBtn').innerText = "PAUSE";
-            bgMusic.currentTime = 0;
-            if (!isMuted) bgMusic.play().catch(() => {});
+            if (!isMuted) { bgMusic.volume = 0.4; bgMusic.play().catch(()=>{}); }
             score = 0; speed = 5.5; gameOver = false; deathTimer = 0;
-            newtonX = 425; bombs = [];
-            resetApple();
-            gameLoop();
-        }
-
-        function togglePause() {
-            if (gameOver || gameState !== 'PLAYING') return;
-            isPaused = !isPaused;
-            document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE";
-            if (isPaused) { bgMusic.pause(); } else if(!isMuted) { bgMusic.play(); gameLoop(); } else { gameLoop(); }
+            newtonX = 425; bombs = []; explosion.active = false;
+            resetApple(); gameLoop();
         }
 
         function resetApple() {
-            appleY = -100;
-            appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
+            appleY = -100; appleX = L_LIMIT + 100 + Math.random() * (R_LIMIT - L_LIMIT - 200);
             isGolden = Math.random() < 0.15;
         }
 
-        function drawWoodenBoard() {
-            ctx.save();
-            const boardW = 400;
-            const boardX = canvas.width/2 - boardW/2;
-            let woodGrad = ctx.createLinearGradient(boardX, 15, boardX, 60);
-            woodGrad.addColorStop(0, '#8B4513'); woodGrad.addColorStop(0.5, '#A0522D'); woodGrad.addColorStop(1, '#5D2906'); 
-            ctx.fillStyle = woodGrad; ctx.fillRect(boardX, 15, boardW, 45);
-            ctx.strokeStyle = "#3e1d08"; ctx.lineWidth = 6; ctx.strokeRect(boardX, 15, boardW, 45);
-            ctx.fillStyle = "#ffe066"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
-            ctx.fillText("SCORE: " + score, canvas.width/2, 48);
-            ctx.restore();
+        function playSFX(audio) { if (!isMuted && audio) { audio.currentTime = 0; audio.play().catch(()=>{}); } }
+
+        function triggerExplosion(x, y) {
+            explosion.active = true; explosion.x = x; explosion.y = y; explosion.timer = 25;
+            playSFX(sfxBomb);
         }
 
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
             if (deathTimer > 0) { deathTimer--; if (deathTimer === 0) gameOver = true; }
             if (gameOver) {
-                if (score > highScore) { highScore = score; localStorage.setItem('newtonHighScore', highScore); document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore; }
+                if (score > highScore) { highScore = score; localStorage.setItem('newtonHighScore', highScore); }
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.save(); ctx.translate(canvas.width/2, 280); ctx.scale(1.8, 1); ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 0, 0); ctx.restore();
+                ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 500, 250);
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
@@ -300,7 +218,6 @@
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // --- ENHANCED PARALLAX LOGIC (Matches Home Screen Width/Feel) ---
             let targetScroll = -(newtonX / R_LIMIT) * (canvas.width * 0.3); 
             bgScrollX += (targetScroll - bgScrollX) * 0.1; 
             ctx.drawImage(currentBG, bgScrollX - 100, 0, canvas.width * 1.3, canvas.height);
@@ -309,70 +226,86 @@
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
-            
             ctx.drawImage(skins[currentSkinIndex], newtonX, 500 - nH - 20, nW, nH);
             
             appleY += speed;
             ctx.drawImage(isGolden ? images.gApple : images.apple, appleX - (iW/2), appleY, iW, iH);
 
-            // COLLISION: CATCH APPLE
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
                 if (isGolden) { score += 5; playSFX(sfxGolden); } else { score += 1; playSFX(sfxApple); }
                 speed += 0.08; resetApple();
             } else if (appleY > canvas.height && deathTimer === 0) {
-                if (isGolden) resetApple(); else { deathTimer = 30; playSFX(sfxBomb); } 
+                if (isGolden) resetApple(); else { deathTimer = 30; triggerExplosion(appleX, 450); }
             }
 
-            if (Math.random() < 0.007 && deathTimer === 0) { 
-                bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
-            }
-            
-            // BOMB LOGIC
+            if (Math.random() < 0.007 && deathTimer === 0) bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(images.bomb, bombs[i].x, bombs[i].y, iW, iH);
-                const bCX = bombs[i].x + (iW/2);
-                const bCY = bombs[i].y + (iH/2);
-                if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
-                    shake = 32; deathTimer = 40;
-                    playSFX(sfxBomb);
+                if (bombs[i].x + iW/2 > newtonX + 40 && bombs[i].x + iW/2 < newtonX + nW - 40 && bombs[i].y + iH/2 > 350 && deathTimer === 0) {
+                    shake = 32; deathTimer = 40; triggerExplosion(bombs[i].x + iW/2, bombs[i].y + iH/2);
                 }
                 if (bombs[i].y > canvas.height) bombs.splice(i, 1);
             }
 
-            drawWoodenBoard();
-            ctx.drawImage(images.border, -22, -22, canvas.width+44, canvas.height+44);
+            if (explosion.active) {
+                ctx.font = `${70 + (25 - explosion.timer) * 3}px Arial`;
+                ctx.textAlign = "center"; ctx.fillText("💥", explosion.x, explosion.y);
+                explosion.timer--; if (explosion.timer <= 0) explosion.active = false;
+            }
+
+            drawBoard();
+            ctx.drawImage(images.border, -22, -22, 1044, 544);
             requestAnimationFrame(gameLoop);
         }
 
-        const handleMainBtn = (id, callback) => {
-            const el = document.getElementById(id);
-            el.onclick = (e) => { e.preventDefault(); callback(); };
-            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-            const release = () => el.classList.remove('pressed');
-            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
-            el.addEventListener('mousedown', press); el.addEventListener('mouseup', release);
+        function drawBoard() {
+            ctx.save();
+            ctx.fillStyle = "#5D2906"; ctx.fillRect(300, 15, 400, 45);
+            ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 3; ctx.strokeRect(300, 15, 400, 45);
+            ctx.fillStyle = "#ffe066"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, 500, 48); ctx.restore();
+        }
+
+        document.getElementById('playBtn').onclick = () => {
+            document.getElementById('startOverlay').style.display = 'none';
+            document.getElementById('gameLoader').style.display = 'flex';
+            preloadEverything();
         };
 
-        const handleMove = (id, key, animClass) => {
+        document.getElementById('reset').onclick = startGame;
+        document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % 2; };
+        document.getElementById('bgSwitchBtn').onclick = () => {
+            currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1;
+            document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
+        };
+        document.getElementById('muteBtn').onclick = () => {
+            isMuted = !isMuted; bgMusic.muted = isMuted;
+            document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊";
+        };
+
+        const handleMove = (id, key) => {
             const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
-            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
+            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('pressed'); };
+            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('pressed'); };
             el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
             el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
-            el.addEventListener('mouseleave', stop); 
+        };
+        handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
+        document.getElementById('pauseBtn').onclick = () => {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE";
+            if (!isPaused) gameLoop();
         };
 
-        handleMainBtn('playBtn', startGame);
-        handleMainBtn('reset', startGame);
-        handleMove('leftBtn', 'left', 'pressed-red');
-        handleMove('rightBtn', 'right', 'pressed-red');
-
-        const pBtn = document.getElementById('pauseBtn');
-        const pPress = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
-        const pRelease = () => pBtn.classList.remove('pressed-orange');
-        pBtn.addEventListener('touchstart', pPress); pBtn.addEventListener('touchend', pRelease);
-        pBtn.addEventListener('mousedown', pPress); pBtn.addEventListener('mouseup', pRelease);
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "ArrowLeft") keys.left = true;
+            if (e.code === "ArrowRight") keys.right = true;
+        });
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "ArrowLeft") keys.left = false;
+            if (e.code === "ArrowRight") keys.right = false;
+        });
     </script>
 </body>
 </html>
