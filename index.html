@@ -103,7 +103,7 @@
         .pressed-red { transform: translateY(4px) !important; box-shadow: 0 2px 0 #550000 !important; }
         .pressed-orange { transform: translateY(4px) !important; box-shadow: 0 1px 0 #bc5100 !important; }
 
-        #loadingText { color: #ffe066; font-size: 18px; margin-top: 15px; }
+        #loadingText { color: #ffe066; font-size: 18px; margin-top: 15px; text-shadow: 2px 2px 4px #000; }
     </style>
 </head>
 
@@ -116,7 +116,7 @@
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
         <button id="playBtn" class="main-btn" disabled>LOADING...</button>
-        <div id="loadingText">Preparing Forest... 0%</div>
+        <div id="loadingText">Gathering apples... 0%</div>
     </div>
 
     <canvas id="game" width="1000" height="500"></canvas>
@@ -160,7 +160,7 @@
                 images[name] = img;
                 loadedCount++;
                 const progress = Math.floor((loadedCount / totalAssets) * 100);
-                document.getElementById('loadingText').innerText = `Preparing Forest... ${progress}%`;
+                document.getElementById('loadingText').innerText = `Gathering apples... ${progress}%`;
                 if (loadedCount === totalAssets) {
                     const btn = document.getElementById('playBtn');
                     btn.disabled = false;
@@ -281,8 +281,9 @@
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let bgOffset = -(newtonX * 0.28); 
-            ctx.drawImage(currentBG, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
+            
+            // --- UPDATED BACKGROUND: Matched Home Screen Width (No Scrolling) ---
+            ctx.drawImage(currentBG, 0, 0, canvas.width, canvas.height);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
@@ -322,7 +323,6 @@
 
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
-            // ❗ Added direct onclick for mouse clicks
             el.onclick = (e) => { e.preventDefault(); callback(); };
             const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
             const release = () => el.classList.remove('pressed');
@@ -336,7 +336,7 @@
             const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
             el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
             el.addEventListener('mousedown', start); el.addEventListener('mouseup', stop);
-            el.addEventListener('mouseleave', stop); // Stop moving if mouse leaves button
+            el.addEventListener('mouseleave', stop); 
         };
 
         handleMainBtn('playBtn', startGame);
