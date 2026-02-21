@@ -11,7 +11,7 @@
             margin: 0; 
             text-align: center; 
             font-family: 'Luckiest Guy', cursive; 
-            background: #000; /* Black background to handle letterboxing on laptops */
+            background: #000; 
             overflow: hidden; 
             touch-action: none; 
             user-select: none; 
@@ -23,15 +23,14 @@
         
         canvas { 
             display: block; 
-            margin: auto; /* Centers the game on laptop screens */
+            margin: auto; 
             max-width: 100vw; 
             max-height: 100vh;
-            object-fit: contain; /* ❗ PREVENTS STRETCHING - Keeps aspect ratio 2:1 */
+            object-fit: contain; 
             background: #1a3c1a; 
             image-rendering: auto;
         }
 
-        /* MINI CIRCULAR TOP RIGHT BUTTONS */
         .top-btn {
             position: fixed;
             width: 35px;  
@@ -133,9 +132,7 @@
     <script>
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
-        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-        // PREVENT STRETCHING LOGIC
         function resizeCanvas() {
             const aspect = 1000 / 500;
             let w = window.innerWidth;
@@ -186,18 +183,16 @@
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
 
-        if (!isMobile) {
-            document.getElementById("mobile-ui").style.display = "none";
-            window.addEventListener("keydown", (e) => {
-                if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
-                if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
-                if (e.code === "Space") togglePause();
-            });
-            window.addEventListener("keyup", (e) => {
-                if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
-                if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
-            });
-        }
+        // KEYBOARD CONTROLS (Always Active)
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+            if (e.code === "Space") togglePause();
+        });
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+            if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+        });
 
         document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % skins.length; };
 
@@ -269,7 +264,6 @@
             ctx.clearRect(0, 0, 1000, 500);
             
             let bgOffset = -(newtonX * 0.28); 
-            // ❗ Fixed background drawing to 1000x500 logic area
             ctx.drawImage(currentBG, bgOffset - 150, -22, 1300, 544);
 
             if (deathTimer === 0) {
@@ -308,20 +302,23 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // UNIVERSAL BUTTON HANDLER (Click & Touch)
         const handleMainBtn = (id, callback) => {
             const el = document.getElementById(id);
-            if (!isMobile) return; 
-            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-            const release = () => el.classList.remove('pressed');
-            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
+            el.addEventListener('click', (e) => { e.preventDefault(); callback(); });
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); });
+            el.addEventListener('touchend', () => el.classList.remove('pressed'));
         };
 
         const handleMove = (id, key, animClass) => {
             const el = document.getElementById(id);
-            if (!isMobile) return; 
-            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
-            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
-            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
+            // Support Mouse
+            el.addEventListener('mousedown', () => { keys[key] = true; el.classList.add(animClass); });
+            el.addEventListener('mouseup', () => { keys[key] = false; el.classList.remove(animClass); });
+            el.addEventListener('mouseleave', () => { keys[key] = false; el.classList.remove(animClass); });
+            // Support Touch
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); });
         };
 
         handleMainBtn('playBtn', startGame);
@@ -330,10 +327,10 @@
         handleMove('rightBtn', 'right', 'pressed-red');
 
         const pBtn = document.getElementById('pauseBtn');
-        const pPress = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
+        const pTrigger = (e) => { e.preventDefault(); pBtn.classList.add('pressed-orange'); togglePause(); };
         const pRelease = () => pBtn.classList.remove('pressed-orange');
-        pBtn.addEventListener('touchstart', pPress); pBtn.addEventListener('touchend', pRelease);
-        pBtn.addEventListener('mousedown', pPress); pBtn.addEventListener('mouseup', pRelease);
+        pBtn.addEventListener('mousedown', pTrigger); pBtn.addEventListener('mouseup', pRelease);
+        pBtn.addEventListener('touchstart', pTrigger); pBtn.addEventListener('touchend', pRelease);
     </script>
 </body>
 </html>
