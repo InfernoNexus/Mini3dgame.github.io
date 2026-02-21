@@ -11,7 +11,7 @@
             margin: 0; 
             text-align: center; 
             font-family: 'Luckiest Guy', cursive; 
-            background: #0d1f0d; 
+            background: #000; /* Black background to handle letterboxing on laptops */
             overflow: hidden; 
             touch-action: none; 
             user-select: none; 
@@ -23,10 +23,10 @@
         
         canvas { 
             display: block; 
-            margin: 0; 
-            width: 100vw; 
-            height: auto;
-            flex-grow: 1; 
+            margin: auto; /* Centers the game on laptop screens */
+            max-width: 100vw; 
+            max-height: 100vh;
+            object-fit: contain; /* ❗ PREVENTS STRETCHING - Keeps aspect ratio 2:1 */
             background: #1a3c1a; 
             image-rendering: auto;
         }
@@ -34,12 +34,12 @@
         /* MINI CIRCULAR TOP RIGHT BUTTONS */
         .top-btn {
             position: fixed;
-            width: 35px;  /* Made smaller */
-            height: 35px; /* Made smaller */
+            width: 35px;  
+            height: 35px; 
             border: 2px solid #ffe066;
             border-radius: 50%;
             color: white;
-            font-size: 16px; /* Adjusted icon size */
+            font-size: 16px; 
             z-index: 2000;
             display: flex;
             align-items: center;
@@ -48,25 +48,9 @@
             box-shadow: 0 3px 0 #1B5E20;
         }
 
-        #skinBtn {
-            top: 10px;
-            right: 100px; /* Compact spacing */
-            background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%);
-            box-shadow: 0 3px 0 #4a148c;
-        }
-
-        #bgSwitchBtn {
-            top: 10px;
-            right: 55px; 
-            background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%);
-        }
-
-        #muteBtn {
-            top: 10px;
-            right: 10px;
-            background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%);
-            box-shadow: 0 3px 0 #0d47a1;
-        }
+        #skinBtn { top: 10px; right: 100px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 3px 0 #4a148c; }
+        #bgSwitchBtn { top: 10px; right: 55px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
+        #muteBtn { top: 10px; right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
 
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -87,13 +71,7 @@
             z-index: 10;
         }
 
-        #control-lane { 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            max-width: 600px;
-            margin: 0 auto 15px auto;
-        }
+        #control-lane { display: flex; justify-content: space-around; align-items: center; max-width: 600px; margin: 0 auto 15px auto; }
 
         #leftBtn, #rightBtn {
             width: 85px; height: 85px; border-radius: 50%;
@@ -155,17 +133,30 @@
     <script>
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
-        // Detect mobile device
-const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-}
+        // PREVENT STRETCHING LOGIC
+        function resizeCanvas() {
+            const aspect = 1000 / 500;
+            let w = window.innerWidth;
+            let h = window.innerHeight;
+            
+            if (w / h > aspect) {
+                w = h * aspect;
+            } else {
+                h = w / aspect;
+            }
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
         
         const borderImg = new Image(); borderImg.src = 'border.png';
         const bg1 = new Image(); bg1.src = 'background.png';
         const bg2 = new Image(); bg2.src = 'background2.png';
         let currentBG = bg1;
 
-        // SKIN SETUP
         const skin0 = new Image(); skin0.src = 'newton.png';
         const skin1 = new Image(); skin1.src = 'newtonskin1.png';
         const skins = [skin0, skin1];
@@ -194,36 +185,27 @@ const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
         let bombs = []; let particles = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
-        const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
-if (!isMobile) {
-    document.getElementById("mobile-ui").style.display = "none";
+        if (!isMobile) {
+            document.getElementById("mobile-ui").style.display = "none";
+            window.addEventListener("keydown", (e) => {
+                if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+                if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+                if (e.code === "Space") togglePause();
+            });
+            window.addEventListener("keyup", (e) => {
+                if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+                if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+            });
+        }
 
-    // Keyboard controls for laptop
-    window.addEventListener("keydown", (e) => {
-        if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
-        if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
-        if (e.code === "Space") togglePause();
-    });
+        document.getElementById('skinBtn').onclick = () => { currentSkinIndex = (currentSkinIndex + 1) % skins.length; };
 
-    window.addEventListener("keyup", (e) => {
-        if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
-        if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
-    });
-}
-
-        // Skin Switch Logic
-        document.getElementById('skinBtn').onclick = () => {
-            currentSkinIndex = (currentSkinIndex + 1) % skins.length;
-        };
-
-        // Background Change logic
         document.getElementById('bgSwitchBtn').onclick = () => {
             currentBG = (currentBG === bg1) ? bg2 : bg1;
             document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
         };
 
-        // Mute logic
         document.getElementById('muteBtn').onclick = () => {
             isMuted = !isMuted;
             bgMusic.muted = isMuted;
@@ -260,14 +242,13 @@ if (!isMobile) {
         function drawWoodenBoard() {
             ctx.save();
             const boardW = 400;
-            const boardX = canvas.width/2 - boardW/2;
+            const boardX = 500 - boardW/2;
             let woodGrad = ctx.createLinearGradient(boardX, 15, boardX, 60);
             woodGrad.addColorStop(0, '#8B4513'); woodGrad.addColorStop(0.5, '#A0522D'); woodGrad.addColorStop(1, '#5D2906'); 
             ctx.fillStyle = woodGrad; ctx.fillRect(boardX, 15, boardW, 45);
             ctx.strokeStyle = "#3e1d08"; ctx.lineWidth = 6; ctx.strokeRect(boardX, 15, boardW, 45);
             ctx.fillStyle = "#ffe066"; ctx.font = "28px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
-            ctx.fillText("SCORE: " + score, canvas.width/2, 48);
+            ctx.fillText("SCORE: " + score, 500, 48);
             ctx.restore();
         }
 
@@ -277,24 +258,25 @@ if (!isMobile) {
             if (gameOver) {
                 if (score > highScore) { highScore = score; localStorage.setItem('newtonHighScore', highScore); document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore; }
                 bgMusic.pause();
-                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.save(); ctx.translate(canvas.width/2, 280); ctx.scale(1.8, 1); ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 0, 0); ctx.restore();
+                ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, 1000, 500);
+                ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center"; ctx.fillText("GAME OVER", 500, 250);
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
 
             ctx.setTransform(1,0,0,1,0,0);
             if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, 1000, 500);
+            
             let bgOffset = -(newtonX * 0.28); 
-            ctx.drawImage(currentBG, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
+            // ❗ Fixed background drawing to 1000x500 logic area
+            ctx.drawImage(currentBG, bgOffset - 150, -22, 1300, 544);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
                 if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             }
             
-            // DRAW ACTIVE SKIN
             ctx.drawImage(skins[currentSkinIndex], newtonX, 500 - nH - 20, nW, nH);
             
             appleY += speed;
@@ -302,7 +284,7 @@ if (!isMobile) {
 
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; speed += 0.08; resetApple();
-            } else if (appleY > canvas.height && deathTimer === 0) {
+            } else if (appleY > 500 && deathTimer === 0) {
                 if (isGolden) resetApple(); else { deathTimer = 30; }
             }
 
@@ -318,38 +300,29 @@ if (!isMobile) {
                 if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) && bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
                     shake = 32; deathTimer = 40;
                 }
-                if (bombs[i].y > canvas.height) bombs.splice(i, 1);
+                if (bombs[i].y > 500) bombs.splice(i, 1);
             }
 
             drawWoodenBoard();
-            ctx.drawImage(borderImg, -22, -22, canvas.width+44, canvas.height+44);
+            ctx.drawImage(borderImg, -22, -22, 1044, 544);
             requestAnimationFrame(gameLoop);
         }
 
-        // CONTROL HANDLERS (Same as before)
-       const handleMainBtn = (id, callback) => {
-    const el = document.getElementById(id);
+        const handleMainBtn = (id, callback) => {
+            const el = document.getElementById(id);
+            if (!isMobile) return; 
+            const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
+            const release = () => el.classList.remove('pressed');
+            el.addEventListener('touchstart', press); el.addEventListener('touchend', release);
+        };
 
-    if (!isMobile) return; // ❌ Disable for desktop
-
-    const press = (e) => { e.preventDefault(); el.classList.add('pressed'); callback(); };
-    const release = () => el.classList.remove('pressed');
-
-    el.addEventListener('touchstart', press);
-    el.addEventListener('touchend', release);
-};
-
-      const handleMove = (id, key, animClass) => {
-    const el = document.getElementById(id);
-
-    if (!isMobile) return; // ❌ Disable for desktop
-
-    const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
-    const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
-
-    el.addEventListener('touchstart', start);
-    el.addEventListener('touchend', stop);
-};
+        const handleMove = (id, key, animClass) => {
+            const el = document.getElementById(id);
+            if (!isMobile) return; 
+            const start = (e) => { e.preventDefault(); keys[key] = true; el.classList.add(animClass); };
+            const stop = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove(animClass); };
+            el.addEventListener('touchstart', start); el.addEventListener('touchend', stop);
+        };
 
         handleMainBtn('playBtn', startGame);
         handleMainBtn('reset', startGame);
