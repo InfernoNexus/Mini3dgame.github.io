@@ -31,6 +31,26 @@
             image-rendering: auto;
         }
 
+        /* NEW BACKGROUND SWITCH BUTTON */
+        #bgSwitchBtn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%);
+            border: 3px solid #ffe066;
+            border-radius: 12px;
+            color: white;
+            font-size: 20px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1B5E20;
+        }
+
         #startOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-image: url('background.png'); background-position: center;
@@ -92,6 +112,8 @@
 </head>
 
 <body>
+    <div id="bgSwitchBtn">🖼️</div>
+
     <div id="startOverlay">
         <h1 class="forest-title">NEWTON<br><span style="color: #a5d6a7;">GRAVITY</span></h1>
         <div id="highScoreDisplay" style="color: #fff; font-size: 24px; margin: 15px 0; text-shadow: 2px 2px 4px #000;">BEST: 0</div>
@@ -116,7 +138,12 @@
         const ctx = canvas.getContext("2d");
         
         const borderImg = new Image(); borderImg.src = 'border.png';
-        const backgroundImg = new Image(); backgroundImg.src = 'background.png';
+        
+        // Background Management
+        const bg1 = new Image(); bg1.src = 'background.png';
+        const bg2 = new Image(); bg2.src = 'background2.png';
+        let currentBG = bg1;
+
         const newtonImg = new Image(); newtonImg.src = 'newton.png';
         const bombImg = new Image(); bombImg.src = 'bomb.png';
         const appleImg = new Image(); appleImg.src = 'apple.png';
@@ -130,9 +157,8 @@
         let highScore = localStorage.getItem('newtonHighScore') || 0;
         document.getElementById('highScoreDisplay').innerText = "BEST: " + highScore;
 
-        // WIDER SCALED SIZES (Width increased, height same)
-        const nW = 315; const nH = 144; // Newton W widened from 252
-        const iW = 85;  const iH = 50;  // Items W widened from 68
+        const nW = 315; const nH = 144; 
+        const iW = 85;  const iH = 50;  
 
         let newtonX = 425; let appleX = 500; let appleY = 0;
         let score = 0; let speed = 5.5; 
@@ -141,6 +167,13 @@
         let bombs = []; let particles = [];
         const keys = { left: false, right: false };
         const L_LIMIT = 20; const R_LIMIT = 980; 
+
+        // Change Background function
+        document.getElementById('bgSwitchBtn').onclick = () => {
+            currentBG = (currentBG === bg1) ? bg2 : bg1;
+            // Also update the home screen overlay background
+            document.getElementById('startOverlay').style.backgroundImage = `url('${currentBG.src}')`;
+        };
 
         function startGame() {
             gameState = 'PLAYING';
@@ -171,25 +204,17 @@
 
         function drawWoodenBoard() {
             ctx.save();
-            // Draxtically wider wooden board (400px wide)
             const boardW = 400;
             const boardX = canvas.width/2 - boardW/2;
-            
-            // Plank Gradient
             let woodGrad = ctx.createLinearGradient(boardX, 15, boardX, 60);
-            woodGrad.addColorStop(0, '#8B4513'); // Saddle Brown
-            woodGrad.addColorStop(0.5, '#A0522D'); // Sienna
-            woodGrad.addColorStop(1, '#5D2906'); // Dark Bark
-            
+            woodGrad.addColorStop(0, '#8B4513'); 
+            woodGrad.addColorStop(0.5, '#A0522D'); 
+            woodGrad.addColorStop(1, '#5D2906'); 
             ctx.fillStyle = woodGrad;
             ctx.fillRect(boardX, 15, boardW, 45);
-            
-            // Border/Bark effect
             ctx.strokeStyle = "#3e1d08"; 
             ctx.lineWidth = 6;
             ctx.strokeRect(boardX, 15, boardW, 45);
-            
-            // Score Text
             ctx.fillStyle = "#ffe066"; 
             ctx.font = "28px Luckiest Guy"; 
             ctx.textAlign = "center";
@@ -230,14 +255,12 @@
                 }
                 bgMusic.pause();
                 ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
                 ctx.save();
                 ctx.translate(canvas.width/2, 280);
                 ctx.scale(1.8, 1); 
                 ctx.fillStyle = "white"; ctx.font = "70px Luckiest Guy"; ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", 0, 0);
                 ctx.restore();
-
                 document.getElementById('reset').style.visibility = 'visible';
                 return;
             }
@@ -247,8 +270,9 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // USE THE CURRENT BG IMAGE
             let bgOffset = -(newtonX * 0.28); 
-            ctx.drawImage(backgroundImg, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
+            ctx.drawImage(currentBG, bgOffset - 150, -22, canvas.width + 500, canvas.height + 44);
 
             if (deathTimer === 0) {
                 if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
@@ -256,11 +280,9 @@
             }
             
             ctx.drawImage(newtonImg, newtonX, 500 - nH - 20, nW, nH);
-
             appleY += speed;
             ctx.drawImage(isGolden ? goldenAppleImg : appleImg, appleX - (iW/2), appleY, iW, iH);
 
-            // Catching logic adjusted for WIDER entities
             if (appleY > (500 - nH - 30) && appleY < (500 - nH + 50) && appleX > newtonX + 20 && appleX < newtonX + (nW - 20) && deathTimer === 0) {
                 score += isGolden ? 5 : 1; 
                 speed += 0.08;
@@ -277,11 +299,8 @@
             for (let i = bombs.length-1; i>=0; i--) {
                 bombs[i].y += bombs[i].s;
                 ctx.drawImage(bombImg, bombs[i].x, bombs[i].y, iW, iH);
-                
                 const bCX = bombs[i].x + (iW/2);
                 const bCY = bombs[i].y + (iH/2);
-                
-                // Bomb hitbox adjusted for wider sprites
                 if (bCX > newtonX + 40 && bCX < newtonX + (nW - 40) &&
                     bCY > (500 - nH - 5) && bCY < 480 && deathTimer === 0) {
                     for(let j=0; j<22; j++) particles.push(new Particle(bombs[i].x + (iW/2), bombs[i].y + (iH/2)));
