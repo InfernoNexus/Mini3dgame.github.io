@@ -26,16 +26,19 @@
             flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
-        /* --- RESTORED 3D MINI BUTTONS --- */
+        /* --- 3D MINI BUTTONS --- */
         .top-btn {
             position: fixed; width: 40px; height: 40px; border: 2px solid #ffe066;
             border-radius: 50%; color: white; font-size: 18px; z-index: 2000;
             display: none; align-items: center; justify-content: center; 
-            cursor: pointer; top: 8px;
+            cursor: pointer; top: 10px;
+            transition: transform 0.05s;
         }
-        #skinBtn { right: 110px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 3px 0 #4a148c; }
-        #bgSwitchBtn { right: 60px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); box-shadow: 0 3px 0 #1B5E20; }
-        #muteBtn { right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
+        #skinBtn { right: 110px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 4px 0 #4a148c; }
+        #bgSwitchBtn { right: 60px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); box-shadow: 0 4px 0 #1B5E20; }
+        #muteBtn { right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 4px 0 #0d47a1; }
+
+        .top-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.5); }
 
         /* --- HOME SCREEN --- */
         #startOverlay {
@@ -44,7 +47,6 @@
             background-size: cover; background-position: center;
             z-index: 1000; display: flex; flex-direction: column; 
             align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
         }
 
         .forest-title {
@@ -53,7 +55,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(4px 4px 0px #1b5e20);
-            margin: 0; line-height: 1.0; padding: 0 10px;
+            margin: 0; line-height: 1.0;
         }
 
         .best-score-vibrant {
@@ -62,18 +64,19 @@
             animation: pulse-gold 2s infinite;
         }
 
-        /* --- RESTORED 3D MAIN BUTTONS --- */
+        /* --- 3D MAIN BUTTONS --- */
         .main-btn {
             font-family: 'Luckiest Guy', cursive; font-size: 32px; padding: 15px 50px; 
             border-radius: 50px; border: 4px solid #ffe066; color: white; cursor: pointer;
             background: linear-gradient(#4CAF50, #2E7D32); 
             box-shadow: 0 6px 0 #1B5E20; outline: none;
-            transition: transform 0.1s, box-shadow 0.1s;
+            position: relative; transition: all 0.1s;
         }
-        .main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
         
-        /* PLAY Button Special Animation Class */
-        .btn-press-anim { animation: press-shrink 0.4s ease forwards; }
+        .main-btn:active, .pressed-btn { 
+            transform: translateY(4px); 
+            box-shadow: 0 2px 0 #1B5E20; 
+        }
 
         /* --- LOADING SCREEN --- */
         #gameLoader {
@@ -94,12 +97,6 @@
             overflow: hidden;
         }
 
-        .energy-channel {
-            position: absolute; top: 30px; left: 40px; right: 40px; bottom: 30px;
-            background: rgba(0,0,0,0.6); border-radius: 30px;
-            border: 2px solid rgba(118, 255, 235, 0.2); overflow: hidden;
-        }
-
         .energy-fill {
             height: 100%; width: 0%; 
             background: linear-gradient(90deg, var(--deep-energy), var(--magic-teal), var(--deep-energy));
@@ -112,9 +109,8 @@
             position: absolute; left: 0%; top: -75px; width: 90px;
             z-index: 10; animation: newton-bob 1.5s ease-in-out infinite;
         }
-        .newton-rider img { width: 100%; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
 
-        /* --- GAME UI & 3D CONTROLS --- */
+        /* --- MOBILE UI & 3D CONTROLS --- */
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
             padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
@@ -125,23 +121,27 @@
             width: 85px; height: 85px; border-radius: 50%; 
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); 
             font-size: 40px; color: white; border: 4px solid #ffe066;
-            box-shadow: 0 5px 0 #550000; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.05s, box-shadow 0.05s;
         }
         
         #pauseBtn { 
             width: 75px; height: 75px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
             border: 3px solid #ffe066; box-shadow: 0 5px 0 #bc5100;
-            color: white; font-size: 14px; 
+            color: white; font-size: 14px; transition: transform 0.05s, box-shadow 0.05s;
         }
 
-        .pressed { transform: translateY(4px) !important; box-shadow: 0 1px 0 #550000 !important; }
+        /* Animation when button is physically held */
+        .pressed { 
+            transform: translateY(6px) !important; 
+            box-shadow: 0 0px 0 #550000 !important; 
+        }
 
-        /* --- ANIMATIONS --- */
         @keyframes energy-flow { from { background-position: 200% 0; } to { background-position: 0% 0; } }
         @keyframes newton-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
         @keyframes pulse-gold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        @keyframes press-shrink { 0% { transform: scale(1); } 50% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 0; } }
+        @keyframes play-out { 0% { transform: scale(1); } 100% { transform: scale(1.2); opacity: 0; } }
     </style>
 </head>
 
@@ -160,11 +160,11 @@
         <h1 class="forest-title" style="font-size: 40px; -webkit-text-fill-color: var(--magic-teal);">PREPARING...</h1>
         <div class="pipeline-wrapper">
             <div class="log-container"></div>
-            <div class="energy-channel">
+            <div class="energy-channel" style="position: absolute; top: 30px; left: 40px; right: 40px; bottom: 30px; background: rgba(0,0,0,0.6); border-radius: 30px; overflow: hidden;">
                 <div id="energyFill" class="energy-fill"></div>
             </div>
             <div id="loadingNewton" class="newton-rider">
-                <img src="newton.png" alt="Newton">
+                <img src="newton.png" alt="Newton" style="width:100%;">
             </div>
         </div>
         <div id="loadStatus" style="margin-top:20px; color: var(--magic-teal);">0%</div>
@@ -303,18 +303,18 @@
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
 
-            // SCORE BOARD: ATTACHED TO TOP CENTER
+            // SCORE BOARD: ATTACHED TO TOP CENTER & FULLY VISIBLE
             ctx.save();
             ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.roundRect(410, 0, 180, 40, {bl: 10, br: 10}); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.roundRect(410, 15, 180, 45, 10); ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, 500, 28); ctx.restore();
+            ctx.fillText("SCORE: " + score, 500, 45); ctx.restore();
 
             ctx.drawImage(images.border, -10, -10, 1020, 520);
         }
 
         document.getElementById('playBtn').onclick = function() {
-            this.classList.add('btn-press-anim');
+            this.style.animation = "play-out 0.4s forwards";
             setTimeout(() => {
                 document.getElementById('startOverlay').style.display = 'none';
                 document.getElementById('gameLoader').style.display = 'flex';
@@ -335,7 +335,14 @@
             btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
-        document.getElementById('pauseBtn').onclick = () => { isPaused = !isPaused; document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) gameLoop(); };
+        
+        document.getElementById('pauseBtn').onclick = function() {
+            this.classList.add('pressed');
+            setTimeout(() => this.classList.remove('pressed'), 100);
+            isPaused = !isPaused; 
+            this.innerText = isPaused ? "RESUME" : "PAUSE"; 
+            if (!isPaused) gameLoop(); 
+        };
     </script>
 </body>
 </html>
