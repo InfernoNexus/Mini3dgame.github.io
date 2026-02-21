@@ -26,17 +26,16 @@
             flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
-        /* --- MINI BUTTONS (Hidden by default) --- */
+        /* --- RESTORED 3D MINI BUTTONS --- */
         .top-btn {
             position: fixed; width: 40px; height: 40px; border: 2px solid #ffe066;
             border-radius: 50%; color: white; font-size: 18px; z-index: 2000;
             display: none; align-items: center; justify-content: center; 
-            cursor: pointer; top: 5px; /* Attached to top */
-            box-shadow: 0 4px 0 #1B5E20;
+            cursor: pointer; top: 8px;
         }
-        #skinBtn { right: 110px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); }
-        #bgSwitchBtn { right: 60px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); }
-        #muteBtn { right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); }
+        #skinBtn { right: 110px; background: radial-gradient(circle at 30% 30%, #ce93d8, #7b1fa2 80%); box-shadow: 0 3px 0 #4a148c; }
+        #bgSwitchBtn { right: 60px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); box-shadow: 0 3px 0 #1B5E20; }
+        #muteBtn { right: 10px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
 
         /* --- HOME SCREEN --- */
         #startOverlay {
@@ -45,6 +44,7 @@
             background-size: cover; background-position: center;
             z-index: 1000; display: flex; flex-direction: column; 
             align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
         }
 
         .forest-title {
@@ -54,16 +54,26 @@
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(4px 4px 0px #1b5e20);
             margin: 0; line-height: 1.0; padding: 0 10px;
-            text-align: center;
         }
 
         .best-score-vibrant {
-            color: var(--vibrant-gold);
-            font-size: 28px;
-            margin: 20px 0;
+            color: var(--vibrant-gold); font-size: 28px; margin: 20px 0;
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 2px 2px 2px #000;
             animation: pulse-gold 2s infinite;
         }
+
+        /* --- RESTORED 3D MAIN BUTTONS --- */
+        .main-btn {
+            font-family: 'Luckiest Guy', cursive; font-size: 32px; padding: 15px 50px; 
+            border-radius: 50px; border: 4px solid #ffe066; color: white; cursor: pointer;
+            background: linear-gradient(#4CAF50, #2E7D32); 
+            box-shadow: 0 6px 0 #1B5E20; outline: none;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
+        
+        /* PLAY Button Special Animation Class */
+        .btn-press-anim { animation: press-shrink 0.4s ease forwards; }
 
         /* --- LOADING SCREEN --- */
         #gameLoader {
@@ -102,31 +112,36 @@
             position: absolute; left: 0%; top: -75px; width: 90px;
             z-index: 10; animation: newton-bob 1.5s ease-in-out infinite;
         }
-
         .newton-rider img { width: 100%; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); }
 
-        /* --- GAME UI --- */
-        .main-btn {
-            font-family: 'Luckiest Guy', cursive; font-size: 32px; padding: 15px 50px; 
-            border-radius: 50px; border: 4px solid #ffe066; color: white; cursor: pointer;
-            background: linear-gradient(#4CAF50, #2E7D32); box-shadow: 0 6px 0 #1B5E20; outline: none;
-        }
-        #reset { display: none; }
-
+        /* --- GAME UI & 3D CONTROLS --- */
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
             padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
         }
         #control-lane { display: flex; justify-content: space-around; max-width: 600px; margin: 0 auto 15px auto; }
-        #leftBtn, #rightBtn { width: 85px; height: 85px; border-radius: 50%; background: #ff6b6b; font-size: 40px; color: white; border: 4px solid #ffe066; }
+        
+        #leftBtn, #rightBtn { 
+            width: 85px; height: 85px; border-radius: 50%; 
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); 
+            font-size: 40px; color: white; border: 4px solid #ffe066;
+            box-shadow: 0 5px 0 #550000; display: flex; align-items: center; justify-content: center;
+        }
+        
+        #pauseBtn { 
+            width: 75px; height: 75px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
+            border: 3px solid #ffe066; box-shadow: 0 5px 0 #bc5100;
+            color: white; font-size: 14px; 
+        }
+
+        .pressed { transform: translateY(4px) !important; box-shadow: 0 1px 0 #550000 !important; }
 
         /* --- ANIMATIONS --- */
         @keyframes energy-flow { from { background-position: 200% 0; } to { background-position: 0% 0; } }
         @keyframes newton-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
-        @keyframes pulse-gold {
-            0%, 100% { transform: scale(1); filter: brightness(1); }
-            50% { transform: scale(1.05); filter: brightness(1.3); }
-        }
+        @keyframes pulse-gold { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes press-shrink { 0% { transform: scale(1); } 50% { transform: scale(0.9); opacity: 0.8; } 100% { transform: scale(1.1); opacity: 0; } }
     </style>
 </head>
 
@@ -160,7 +175,7 @@
     <div id="mobile-ui">
         <div id="control-lane">
             <button id="leftBtn">◀</button>
-            <button id="pauseBtn" class="main-btn" style="font-size: 18px; padding: 10px;">PAUSE</button>
+            <button id="pauseBtn">PAUSE</button>
             <button id="rightBtn">▶</button>
         </div>
         <div id="reset-lane" style="height: 70px; display: flex; justify-content: center; align-items: center;">
@@ -183,14 +198,13 @@
         };
 
         function showMiniButtons(show) {
-            const btns = document.querySelectorAll('.top-btn');
-            btns.forEach(b => b.style.display = show ? 'flex' : 'none');
+            document.querySelectorAll('.top-btn').forEach(b => b.style.display = show ? 'flex' : 'none');
         }
 
         function preloadEverything() {
             let loaded = 0;
             const total = Object.keys(imageAssets).length + 4;
-            showMiniButtons(false); // Hide during loading
+            showMiniButtons(false);
 
             const updateProgress = () => {
                 loaded++;
@@ -198,18 +212,12 @@
                 document.getElementById('energyFill').style.width = prog + '%';
                 document.getElementById('loadingNewton').style.left = `calc(${prog}% - 45px)`;
                 document.getElementById('loadStatus').innerText = `${Math.floor(prog)}%`;
-                
-                if (loaded === total) {
-                    setTimeout(startGame, 800);
-                }
+                if (loaded === total) setTimeout(startGame, 800);
             };
 
             Object.entries(imageAssets).forEach(([name, src]) => {
-                images[name] = new Image();
-                images[name].src = src;
-                images[name].onload = updateProgress;
+                images[name] = new Image(); images[name].src = src; images[name].onload = updateProgress;
             });
-
             bgMusic = new Audio('background_music.mp3'); bgMusic.oncanplaythrough = updateProgress; bgMusic.loop = true;
             sfxApple = new Audio('apple.mp3'); sfxApple.oncanplaythrough = updateProgress;
             sfxGolden = new Audio('goldenapple.mp3'); sfxGolden.oncanplaythrough = updateProgress;
@@ -228,11 +236,10 @@
         function startGame() {
             document.getElementById('gameLoader').style.display = 'none';
             document.getElementById('reset').style.display = 'none';
-            showMiniButtons(true); // Show during actual gameplay
+            showMiniButtons(true);
             skins = [images.skin0, images.skin1];
             currentBG = currentBG || images.bg1;
-            gameState = 'PLAYING';
-            gameOver = false;
+            gameState = 'PLAYING'; gameOver = false;
             if (!isMuted) { bgMusic.volume = 0.4; bgMusic.play().catch(()=>{}); }
             score = 0; speed = 5.5; newtonX = 425; bombs = []; explosion.active = false;
             resetApple(); gameLoop();
@@ -258,13 +265,10 @@
         function gameLoop() {
             if (gameState !== 'PLAYING' || isPaused) return;
             if (gameOver) {
-                render();
-                ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,1000,500);
+                render(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,1000,500);
                 ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", 500, 250);
-                return;
+                ctx.fillText("GAME OVER", 500, 250); return;
             }
-
             if (keys.left && newtonX > L_LIMIT) newtonX -= 15;
             if (keys.right && newtonX < R_LIMIT - nW) newtonX += 15;
             appleY += speed;
@@ -272,9 +276,7 @@
             if (appleY > 330 && appleY < 410 && appleX > newtonX + 20 && appleX < newtonX + nW - 20) {
                 if (isGolden) { score += 5; if(!isMuted) sfxGolden.play(); } else { score += 1; if(!isMuted) sfxApple.play(); }
                 speed += 0.08; resetApple();
-            } else if (appleY > 480) {
-                if (isGolden) resetApple(); else triggerGameOver(appleX, 450);
-            }
+            } else if (appleY > 480) { if (isGolden) resetApple(); else triggerGameOver(appleX, 450); }
 
             if (Math.random() < 0.007) bombs.push({ x: L_LIMIT + Math.random()*(R_LIMIT-L_LIMIT-iW), y: -100, s: 4 + Math.random()*2 });
             for (let i = bombs.length-1; i>=0; i--) {
@@ -282,9 +284,7 @@
                 if (bombs[i].x + 40 > newtonX && bombs[i].x < newtonX + nW - 40 && bombs[i].y > 350) triggerGameOver(bombs[i].x, bombs[i].y);
                 if (bombs[i].y > 500) bombs.splice(i,1);
             }
-
-            render();
-            requestAnimationFrame(gameLoop);
+            render(); requestAnimationFrame(gameLoop);
         }
 
         function render() {
@@ -303,38 +303,39 @@
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
 
-            // SCORE BOARD: Moved down and designed for visibility
+            // SCORE BOARD: ATTACHED TO TOP CENTER
             ctx.save();
-            ctx.fillStyle = "rgba(93, 41, 6, 0.9)";
-            ctx.strokeStyle = "#ffe066";
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.roundRect(400, 60, 200, 45, 10); // Position 60 (Moved down)
-            ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#ffe066"; ctx.font = "26px Luckiest Guy"; ctx.textAlign = "center";
-            ctx.fillText("SCORE: " + score, 500, 92);
-            ctx.restore();
+            ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.roundRect(410, 0, 180, 40, {bl: 10, br: 10}); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
+            ctx.fillText("SCORE: " + score, 500, 28); ctx.restore();
 
             ctx.drawImage(images.border, -10, -10, 1020, 520);
         }
 
-        document.getElementById('playBtn').onclick = () => {
-            document.getElementById('startOverlay').style.display = 'none';
-            document.getElementById('gameLoader').style.display = 'flex';
-            preloadEverything();
+        document.getElementById('playBtn').onclick = function() {
+            this.classList.add('btn-press-anim');
+            setTimeout(() => {
+                document.getElementById('startOverlay').style.display = 'none';
+                document.getElementById('gameLoader').style.display = 'flex';
+                preloadEverything();
+            }, 400);
         };
+
         document.getElementById('reset').onclick = startGame;
         document.getElementById('skinBtn').onclick = () => currentSkinIndex = (currentSkinIndex + 1) % 2;
-        document.getElementById('muteBtn').onclick = () => { isMuted = !isMuted; bgMusic.muted = isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊"; };
+        document.getElementById('bgSwitchBtn').onclick = () => { currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1; };
+        document.getElementById('muteBtn').onclick = () => { isMuted = !isMuted; if(bgMusic) bgMusic.muted = isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊"; };
         
         const handleMove = (id, k) => {
             const btn = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); keys[k] = true; };
-            const end = (e) => { e.preventDefault(); keys[k] = false; };
+            const start = (e) => { e.preventDefault(); keys[k] = true; btn.classList.add('pressed'); };
+            const end = (e) => { e.preventDefault(); keys[k] = false; btn.classList.remove('pressed'); };
             btn.addEventListener('touchstart', start); btn.addEventListener('touchend', end);
             btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
+        document.getElementById('pauseBtn').onclick = () => { isPaused = !isPaused; document.getElementById('pauseBtn').innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) gameLoop(); };
     </script>
 </body>
 </html>
