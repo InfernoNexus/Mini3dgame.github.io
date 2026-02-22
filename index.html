@@ -91,6 +91,8 @@
             background: linear-gradient(90deg, var(--deep-energy), var(--magic-teal), var(--deep-energy));
             background-size: 200% 100%; position: relative;
             box-shadow: 0 0 25px var(--magic-teal);
+            /* Smooth width transition for sustainable loading */
+            transition: width 0.1s linear;
             animation: energy-flow 2s linear infinite;
         }
 
@@ -178,32 +180,50 @@
         }
 
         function preloadEverything() {
-            let loaded = 0;
+            let loadedCount = 0;
+            let visualProgress = 0;
             const total = Object.keys(imageAssets).length + 4;
+            let assetsReady = false;
+
             showMiniButtons(false);
 
-            const updateProgress = () => {
-                loaded++;
-                let prog = (loaded / total) * 100;
-                document.getElementById('energyFill').style.width = prog + '%';
-                document.getElementById('loadStatus').innerText = `${Math.floor(prog)}%`;
-                
-                if (loaded === total) {
+            // Asset loading tracker
+            const trackAsset = () => {
+                loadedCount++;
+                if (loadedCount === total) assetsReady = true;
+            };
+
+            // Fake "Smooth" Progress Timer
+            const smoothInterval = setInterval(() => {
+                // If assets are actually loaded, we can move a bit faster, 
+                // but we cap the speed for a "sustainable" feel.
+                let increment = assetsReady ? 2 : 0.8; 
+                visualProgress += increment;
+
+                if (visualProgress >= 100) {
+                    visualProgress = 100;
+                    clearInterval(smoothInterval);
                     setTimeout(() => {
                         document.getElementById('gameLoader').style.display = 'none';
                         showMiniButtons(true);
                         startGame();
-                    }, 800);
+                    }, 500);
                 }
-            };
 
+                document.getElementById('energyFill').style.width = visualProgress + '%';
+                document.getElementById('loadStatus').innerText = `${Math.floor(visualProgress)}%`;
+            }, 30); 
+
+            // Start actual loading
             Object.entries(imageAssets).forEach(([name, src]) => {
-                images[name] = new Image(); images[name].src = src; images[name].onload = updateProgress;
+                images[name] = new Image(); 
+                images[name].src = src; 
+                images[name].onload = trackAsset;
             });
-            bgMusic = new Audio('background_music.mp3'); bgMusic.oncanplaythrough = updateProgress; bgMusic.loop = true;
-            sfxApple = new Audio('apple.mp3'); sfxApple.oncanplaythrough = updateProgress;
-            sfxGolden = new Audio('goldenapple.mp3'); sfxGolden.oncanplaythrough = updateProgress;
-            sfxBomb = new Audio('bomb.mp3'); sfxBomb.oncanplaythrough = updateProgress;
+            bgMusic = new Audio('background_music.mp3'); bgMusic.oncanplaythrough = trackAsset; bgMusic.loop = true;
+            sfxApple = new Audio('apple.mp3'); sfxApple.oncanplaythrough = trackAsset;
+            sfxGolden = new Audio('goldenapple.mp3'); sfxGolden.oncanplaythrough = trackAsset;
+            sfxBomb = new Audio('bomb.mp3'); sfxBomb.oncanplaythrough = trackAsset;
         }
 
         let gameState = 'HOME', isPaused = false, isMuted = false, highScore = localStorage.getItem('newtonHighScore') || 0;
@@ -229,11 +249,16 @@
         function triggerGameOver(exX, exY, hitBomb = false) {
             if(gameOver) return;
             gameOver = true; 
-            shake = 40; // Intense shake on miss
+            
+            // FIX: Shake only if hitting a bomb
             if (hitBomb) {
+                shake = 40; 
                 explosion.active = true; explosion.x = exX; explosion.y = exY; explosion.timer = 30;
                 if (!isMuted) { sfxBomb.currentTime = 0; sfxBomb.play(); }
+            } else {
+                shake = 0; // No shake for missed apples
             }
+
             bgMusic.pause();
             document.getElementById('reset').style.display = 'block';
             if (score > highScore) { 
@@ -272,7 +297,6 @@
             ctx.setTransform(1,0,0,1,0,0);
             ctx.clearRect(0,0,1000,500);
 
-            // 1. Shaking Layer (World Content only)
             if (shake > 0) { 
                 ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); 
                 shake *= 0.85; 
@@ -290,14 +314,12 @@
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
 
-            // 2. Fixed UI Layer (Border, Score, Game Over)
             ctx.setTransform(1,0,0,1,0,0); 
             
-            // Widened Score Board
             ctx.save();
             ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
             ctx.beginPath(); 
-            ctx.roundRect(380, 15, 240, 45, 10); // Center x: 500 - (240/2) = 380
+            ctx.roundRect(380, 15, 240, 45, 10); 
             ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, 500, 45); 
@@ -309,7 +331,6 @@
                 ctx.fillText("GAME OVER", 500, 250);
             }
 
-            // Drastically Stretched Border (Neutralized & Overlapping edges)
             ctx.drawImage(images.border, -50, -50, 1100, 600);
         }
 
