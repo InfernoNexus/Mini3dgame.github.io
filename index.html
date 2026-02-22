@@ -64,7 +64,6 @@
             animation: pulse-gold 2s infinite;
         }
 
-        /* --- 3D MAIN BUTTONS --- */
         .main-btn {
             font-family: 'Luckiest Guy', cursive; font-size: 32px; padding: 15px 50px; 
             border-radius: 50px; border: 4px solid #ffe066; color: white; cursor: pointer;
@@ -73,7 +72,7 @@
             position: relative; transition: all 0.1s;
         }
         
-        .main-btn:active, .pressed-btn { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
+        .main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
 
         /* --- LOADING SCREEN (NEWTON REMOVED) --- */
         #gameLoader {
@@ -102,7 +101,7 @@
             animation: energy-flow 2s linear infinite;
         }
 
-        /* --- MOBILE UI & 3D CONTROLS --- */
+        /* --- MOBILE UI --- */
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
             padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
@@ -114,14 +113,13 @@
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #800000 80%); 
             font-size: 40px; color: white; border: 4px solid #ffe066;
             box-shadow: 0 6px 0 #550000; display: flex; align-items: center; justify-content: center;
-            transition: transform 0.05s, box-shadow 0.05s;
         }
         
         #pauseBtn { 
             width: 75px; height: 75px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #ffd54f, #f57f17 80%); 
             border: 3px solid #ffe066; box-shadow: 0 5px 0 #bc5100;
-            color: white; font-size: 14px; transition: transform 0.05s, box-shadow 0.05s;
+            color: white; font-size: 14px;
         }
 
         .pressed { transform: translateY(6px) !important; box-shadow: 0 0px 0 #550000 !important; }
@@ -163,7 +161,7 @@
             <button id="rightBtn">▶</button>
         </div>
         <div id="reset-lane" style="height: 70px; display: flex; justify-content: center; align-items: center;">
-            <button id="reset" class="main-btn">TRY AGAIN</button>
+            <button id="reset" class="main-btn" style="display:none;">TRY AGAIN</button>
         </div>
     </div>
 
@@ -175,6 +173,8 @@
 
         let images = {}, skins = [], currentBG;
         let bgMusic, sfxApple, sfxGolden, sfxBomb;
+        let gameLoopId = null; // To prevent speed-up glitch
+
         const imageAssets = {
             border: 'border.png', bg1: 'background.png', bg2: 'background2.png',
             skin0: 'newton.png', skin1: 'newtonskin1.png', bomb: 'bomb.png',
@@ -195,7 +195,14 @@
                 let prog = (loaded / total) * 100;
                 document.getElementById('energyFill').style.width = prog + '%';
                 document.getElementById('loadStatus').innerText = `${Math.floor(prog)}%`;
-                if (loaded === total) setTimeout(startGame, 800);
+                
+                if (loaded === total) {
+                    setTimeout(() => {
+                        document.getElementById('gameLoader').style.display = 'none';
+                        showMiniButtons(true); // Show buttons only AFTER loader is gone
+                        startGame();
+                    }, 800);
+                }
             };
 
             Object.entries(imageAssets).forEach(([name, src]) => {
@@ -217,15 +224,25 @@
         let bgScrollX = 0, currentSkinIndex = 0;
 
         function startGame() {
-            document.getElementById('gameLoader').style.display = 'none';
+            // Fix: Clear previous loops and reset speed
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            
             document.getElementById('reset').style.display = 'none';
-            showMiniButtons(true);
             skins = [images.skin0, images.skin1];
             currentBG = currentBG || images.bg1;
-            gameState = 'PLAYING'; gameOver = false;
+            gameState = 'PLAYING'; 
+            gameOver = false;
+            
             if (!isMuted) { bgMusic.volume = 0.4; bgMusic.play().catch(()=>{}); }
-            score = 0; speed = 5.5; newtonX = 425; bombs = []; explosion.active = false; shake = 0;
-            resetApple(); gameLoop();
+            
+            score = 0; 
+            speed = 5.5; // Reset speed every restart
+            newtonX = 425; 
+            bombs = []; 
+            explosion.active = false; 
+            shake = 0;
+            resetApple(); 
+            gameLoop();
         }
 
         function triggerGameOver(exX, exY, hitBomb = false) {
@@ -265,34 +282,49 @@
                     if (bombs[i].y > 500) bombs.splice(i,1);
                 }
             }
-            render(); requestAnimationFrame(gameLoop);
+            render(); 
+            gameLoopId = requestAnimationFrame(gameLoop);
         }
 
         function render() {
             ctx.setTransform(1,0,0,1,0,0);
             ctx.clearRect(0,0,1000,500);
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
+
+            // Shaking Layer
+            if (shake > 0) { 
+                ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); 
+                shake *= 0.9; 
+            }
+
             let targetScroll = -(newtonX / R_LIMIT) * 300; bgScrollX += (targetScroll - bgScrollX) * 0.1;
             ctx.drawImage(currentBG, bgScrollX - 100, 0, 1300, 500);
             ctx.drawImage(skins[currentSkinIndex], newtonX, 340, nW, nH);
             if (!gameOver) ctx.drawImage(isGolden ? images.gApple : images.apple, appleX-42, appleY, iW, iH);
             bombs.forEach(b => ctx.drawImage(images.bomb, b.x, b.y, iW, iH));
+
             if (explosion.active) {
                 ctx.save(); ctx.font = `${80 + (30 - explosion.timer) * 3}px Arial`; ctx.textAlign = "center";
                 ctx.fillText("💥", explosion.x, explosion.y); ctx.restore();
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
-            ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+
+            // Fixed UI Layer
+            ctx.setTransform(1,0,0,1,0,0); 
+            ctx.save();
             ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
             ctx.beginPath(); ctx.roundRect(410, 15, 180, 45, 10); ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, 500, 45); 
+            ctx.restore();
+
             if (gameOver) {
                 ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,1000,500);
                 ctx.fillStyle = "white"; ctx.font = "80px Luckiest Guy"; ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", 500, 250);
             }
-            ctx.drawImage(images.border, -20, -20, 1040, 540); ctx.restore();
+
+            // Neutral Border Fix (Push down to show top)
+            ctx.drawImage(images.border, 0, 0, 1000, 500);
         }
 
         document.getElementById('playBtn').onclick = function() {
@@ -308,6 +340,7 @@
         document.getElementById('skinBtn').onclick = () => currentSkinIndex = (currentSkinIndex + 1) % 2;
         document.getElementById('bgSwitchBtn').onclick = () => currentBG = (currentBG === images.bg1) ? images.bg2 : images.bg1;
         document.getElementById('muteBtn').onclick = () => { isMuted = !isMuted; if(bgMusic) bgMusic.muted = isMuted; document.getElementById('muteBtn').innerText = isMuted ? "🔇" : "🔊"; };
+
         const handleMove = (id, k) => {
             const btn = document.getElementById(id);
             const start = (e) => { e.preventDefault(); if(!gameOver) keys[k] = true; btn.classList.add('pressed'); };
@@ -316,10 +349,13 @@
             btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
         };
         handleMove('leftBtn', 'left'); handleMove('rightBtn', 'right');
+        
         document.getElementById('pauseBtn').onclick = function() {
             if(gameOver) return;
             this.classList.add('pressed'); setTimeout(() => this.classList.remove('pressed'), 100);
-            isPaused = !isPaused; this.innerText = isPaused ? "RESUME" : "PAUSE"; if (!isPaused) gameLoop(); 
+            isPaused = !isPaused; 
+            this.innerText = isPaused ? "RESUME" : "PAUSE"; 
+            if (!isPaused) gameLoop(); 
         };
     </script>
 </body>
