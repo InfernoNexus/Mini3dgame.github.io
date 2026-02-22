@@ -26,7 +26,6 @@
             flex-grow: 1; background: #1a3c1a; image-rendering: auto;
         }
 
-        /* --- 3D MINI BUTTONS (SMALLER) --- */
         .top-btn {
             position: fixed; width: 32px; height: 32px; border: 2px solid #ffe066;
             border-radius: 50%; color: white; font-size: 14px; z-index: 2000;
@@ -38,9 +37,6 @@
         #bgSwitchBtn { right: 55px; background: radial-gradient(circle at 30% 30%, #a5d6a7, #2E7D32 80%); box-shadow: 0 3px 0 #1B5E20; }
         #muteBtn { right: 15px; background: radial-gradient(circle at 30% 30%, #90caf9, #1565c0 80%); box-shadow: 0 3px 0 #0d47a1; }
 
-        .top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
-
-        /* --- HOME SCREEN --- */
         #startOverlay {
             position: fixed; inset: 0;
             background-image: url('background.png');
@@ -71,10 +67,7 @@
             box-shadow: 0 6px 0 #1B5E20; outline: none;
             position: relative; transition: all 0.1s;
         }
-        
-        .main-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1B5E20; }
 
-        /* --- LOADING SCREEN (NEWTON REMOVED) --- */
         #gameLoader {
             position: fixed; inset: 0; z-index: 5000;
             background: url('loadingbackgroundscreen.png') no-repeat center center;
@@ -101,7 +94,6 @@
             animation: energy-flow 2s linear infinite;
         }
 
-        /* --- MOBILE UI --- */
         #mobile-ui {
             background: linear-gradient(to top, #000, #1a3c1a);
             padding: 10px 10px 60px 10px; border-top: 4px solid #ffe066; z-index: 10;
@@ -173,7 +165,7 @@
 
         let images = {}, skins = [], currentBG;
         let bgMusic, sfxApple, sfxGolden, sfxBomb;
-        let gameLoopId = null; // To prevent speed-up glitch
+        let gameLoopId = null;
 
         const imageAssets = {
             border: 'border.png', bg1: 'background.png', bg2: 'background2.png',
@@ -199,7 +191,7 @@
                 if (loaded === total) {
                     setTimeout(() => {
                         document.getElementById('gameLoader').style.display = 'none';
-                        showMiniButtons(true); // Show buttons only AFTER loader is gone
+                        showMiniButtons(true);
                         startGame();
                     }, 800);
                 }
@@ -224,30 +216,20 @@
         let bgScrollX = 0, currentSkinIndex = 0;
 
         function startGame() {
-            // Fix: Clear previous loops and reset speed
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
-            
             document.getElementById('reset').style.display = 'none';
             skins = [images.skin0, images.skin1];
             currentBG = currentBG || images.bg1;
-            gameState = 'PLAYING'; 
-            gameOver = false;
-            
+            gameState = 'PLAYING'; gameOver = false;
             if (!isMuted) { bgMusic.volume = 0.4; bgMusic.play().catch(()=>{}); }
-            
-            score = 0; 
-            speed = 5.5; // Reset speed every restart
-            newtonX = 425; 
-            bombs = []; 
-            explosion.active = false; 
-            shake = 0;
-            resetApple(); 
-            gameLoop();
+            score = 0; speed = 5.5; newtonX = 425; bombs = []; explosion.active = false; shake = 0;
+            resetApple(); gameLoop();
         }
 
         function triggerGameOver(exX, exY, hitBomb = false) {
             if(gameOver) return;
-            gameOver = true; shake = 35;
+            gameOver = true; 
+            shake = 40; // Intense shake on miss
             if (hitBomb) {
                 explosion.active = true; explosion.x = exX; explosion.y = exY; explosion.timer = 30;
                 if (!isMuted) { sfxBomb.currentTime = 0; sfxBomb.play(); }
@@ -290,10 +272,10 @@
             ctx.setTransform(1,0,0,1,0,0);
             ctx.clearRect(0,0,1000,500);
 
-            // Shaking Layer
+            // 1. Shaking Layer (World Content only)
             if (shake > 0) { 
                 ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); 
-                shake *= 0.9; 
+                shake *= 0.85; 
             }
 
             let targetScroll = -(newtonX / R_LIMIT) * 300; bgScrollX += (targetScroll - bgScrollX) * 0.1;
@@ -308,11 +290,15 @@
                 explosion.timer--; if(explosion.timer <= 0) explosion.active = false;
             }
 
-            // Fixed UI Layer
+            // 2. Fixed UI Layer (Border, Score, Game Over)
             ctx.setTransform(1,0,0,1,0,0); 
+            
+            // Widened Score Board
             ctx.save();
             ctx.fillStyle = "rgba(93, 41, 6, 0.95)"; ctx.strokeStyle = "#ffe066"; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.roundRect(410, 15, 180, 45, 10); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); 
+            ctx.roundRect(380, 15, 240, 45, 10); // Center x: 500 - (240/2) = 380
+            ctx.fill(); ctx.stroke();
             ctx.fillStyle = "#ffe066"; ctx.font = "24px Luckiest Guy"; ctx.textAlign = "center";
             ctx.fillText("SCORE: " + score, 500, 45); 
             ctx.restore();
@@ -323,8 +309,8 @@
                 ctx.fillText("GAME OVER", 500, 250);
             }
 
-            // Neutral Border Fix (Push down to show top)
-            ctx.drawImage(images.border, 0, 0, 1000, 500);
+            // Drastically Stretched Border (Neutralized & Overlapping edges)
+            ctx.drawImage(images.border, -50, -50, 1100, 600);
         }
 
         document.getElementById('playBtn').onclick = function() {
